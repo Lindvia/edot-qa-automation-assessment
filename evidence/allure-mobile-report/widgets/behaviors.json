@@ -1,0 +1,1 @@
+{"total":2,"items":[{"uid":"5e8cb211298d36c968fe603a3009057c","name":"Mobile new customer","statistic":{"failed":0,"broken":0,"skipped":0,"passed":3,"unknown":0,"total":3}},{"uid":"9cb3cf1fccadab948cc342137c081ac3","name":"Mobile login","statistic":{"failed":0,"broken":0,"skipped":0,"passed":2,"unknown":0,"total":2}}]}

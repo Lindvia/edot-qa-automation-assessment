@@ -1,0 +1,6 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","107130","Mobile customer card should show the data that was entered","mobile.tests","2026-10-04","passed","2026-10-04","TestMobileNewCustomer","test_mobile_customer","",""
+"","114958","Mobile login with valid credentials should show the dashboard","mobile.tests","2026-10-04","passed","2026-10-04","TestMobileLogin","test_mobile_login","",""
+"","207006","Mobile create customer without an outlet name should keep Continue disabled","mobile.tests","2026-10-04","passed","2026-10-04","TestMobileNewCustomer","test_mobile_customer","",""
+"","119458","Mobile login with a wrong password should show the wrong login combination error","mobile.tests","2026-10-04","passed","2026-10-04","TestMobileLogin","test_mobile_login","",""
+"","378851","Mobile create customer with valid data should list the new customer","mobile.tests","2026-10-04","passed","2026-10-04","TestMobileNewCustomer","test_mobile_customer","",""

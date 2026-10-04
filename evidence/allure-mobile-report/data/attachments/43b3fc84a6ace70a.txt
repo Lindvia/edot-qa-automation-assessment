@@ -1,0 +1,27 @@
+$ 'C:\maestro\bin\maestro.bat' --device 192.168.1.9:5555 test --no-reinstall-driver --debug-output 'C:\Users\Lindvia\AppData\Local\Temp\maestro-9bwh2q65' -e APP_ID=id.edot.ework -e COMPANY_ID=5049209 -e USERNAME=salesmanqaauto -e 'PASSWORD=***' 'D:\Work\edot-qa-assessment\mobile\flows\login_wrong_password.yaml'
+
+exit code 0 in 117.4s
+
+Running on 192.168.1.9:5555
+ > Flow login_wrong_password
+Run shared/login.yaml...
+  Launch app "${APP_ID}" with clear state... COMPLETED
+  Tap on (Optional) "Later"... WARNED
+  Tap on id: tv_company_id... COMPLETED
+  Tap on (Optional) "Later"... WARNED
+  Erase 50 characters... COMPLETED
+  Input text ${COMPANY_ID}... COMPLETED
+  Tap on id: tv_username... COMPLETED
+  Tap on (Optional) "Later"... WARNED
+  Erase 50 characters... COMPLETED
+  Input text ${USERNAME}... COMPLETED
+  Tap on id: tv_password... COMPLETED
+  Tap on (Optional) "Later"... WARNED
+  Erase 50 characters... COMPLETED
+  Input text ${PASSWORD}... COMPLETED
+  Tap on id: btn_signin... COMPLETED
+Run shared/login.yaml... COMPLETED
+Assert that "Oops" is visible... COMPLETED
+Assert that "Wrong login combination" is visible... COMPLETED
+Assert that "OK" is visible... COMPLETED
+Assert that id: rv_main_menu is not visible... COMPLETED

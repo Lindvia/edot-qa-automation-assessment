@@ -1,0 +1,21 @@
+$ 'C:\maestro\bin\maestro.bat' --device 192.168.1.9:5555 test --no-reinstall-driver --debug-output 'C:\Users\Lindvia\AppData\Local\Temp\maestro-givg6ged' -e APP_ID=id.edot.ework -e COMPANY_ID=5049209 -e USERNAME=salesmanqaauto -e 'PASSWORD=***' -e 'OUTLET_NAME=Toko Berkah Utama QABPCSG' -e PHONE=8572918340 -e EMAIL=toko.berkah.bpcsg@example.co.id -e 'CONTACT_PERSON=Budi Santoso' -e 'STREET_ADDRESS=Jl. Diponegoro No. 45' -e 'CHANNEL=General\ Trade\ \(GT\)' -e 'CUSTOMER_TYPE=Retailer Small' -e 'ADDRESS_TYPE=Delivery Address' -e 'PROVINCE=DKI JAKARTA' -e 'CITY=JAKARTA SELATAN' -e DISTRICT=SETIABUDI -e 'SUB_DISTRICT=KARET KUNINGAN' -e POSTAL_CODE=12940 -e KTP=3171484627550449 'D:\Work\edot-qa-assessment\mobile\flows\verify_customer_card.yaml'
+
+exit code 0 in 107.1s
+
+Running on 192.168.1.9:5555
+ > Flow verify_customer_card
+Launch app "${APP_ID}"... COMPLETED
+Assert that id: rv_main_menu is visible... COMPLETED
+Tap on "New Customer"... COMPLETED
+Assert that id: rvNooCustomer is visible... COMPLETED
+Run shared/find_customer_card.yaml...
+  Repeat 40 times...
+    Swipe from (50%, 88%) to (50%, 12%) in 200 ms... COMPLETED
+  Repeat 40 times... COMPLETED
+  Scrolling DOWN until "${OUTLET_NAME}" is visible with speed 70, visibility percentage 100%, timeout 120000 ms, with centering disabled... COMPLETED
+Run shared/find_customer_card.yaml... COMPLETED
+Assert that "${OUTLET_NAME}", id: tv_name is visible... COMPLETED
+Assert that Contains child: "${OUTLET_NAME}", id: tv_name, Contains descendants: ["${STREET_ADDRESS}", id: tv_address] is visible... COMPLETED
+Assert that Contains child: "${OUTLET_NAME}", id: tv_name, Contains descendants: ["${CUSTOMER_TYPE}", id: tv_first_customer_group] is visible... COMPLETED
+Assert that Contains child: "${OUTLET_NAME}", id: tv_name, Contains descendants: ["Waiting for Approval", id: tv_status] is visible... COMPLETED
+Assert that Contains child: "${OUTLET_NAME}", id: tv_name, Contains descendants: ["CUST-[0-9]+", id: tv_reg_number] is visible... COMPLETED

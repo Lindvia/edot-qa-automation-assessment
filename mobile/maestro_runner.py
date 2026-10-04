@@ -51,6 +51,15 @@ def mask(command: List[str]) -> str:
     return " ".join(shlex.quote(p) for p in shown)
 
 
+def redact(text: str, env: Dict[str, str]) -> str:
+    """Text with every secret value of `env` replaced by ***. Maestro logs the text it types, so the
+    password would otherwise end up in the Allure attachments."""
+    for key in SECRET_KEYS:
+        if env.get(key):
+            text = text.replace(env[key], "***")
+    return text
+
+
 def split_command(maestro_cmd: Union[str, Sequence[str], None]) -> List[str]:
     """`maestro`, `wsl maestro` or an explicit list -> argv. Windows paths keep their backslashes."""
     if not maestro_cmd:
@@ -146,14 +155,14 @@ def run_flow(flow_name: str, env: Dict[str, str], maestro_cmd: Union[str, Sequen
         video = recorder.stop(debug_dir / "recording.mp4")
 
         result = FlowResult(flow_name, code, stdout or "", stderr or "", duration, mask(command), debug_dir, video)
-        attach_result(result)
+        attach_result(result, env)
     return result
 
 
-def attach_result(result: FlowResult) -> None:
+def attach_result(result: FlowResult, env: Dict[str, str]) -> None:
     """Attach the Maestro output, debug screenshots and the recording to the current Allure step."""
-    allure.attach(f"$ {result.command}\n\nexit code {result.returncode} in {result.duration:.1f}s\n\n{result.output}",
-                  name="maestro-output", attachment_type=allure.attachment_type.TEXT)
+    text = f"$ {result.command}\n\nexit code {result.returncode} in {result.duration:.1f}s\n\n{result.output}"
+    allure.attach(redact(text, env), name="maestro-output", attachment_type=allure.attachment_type.TEXT)
     result.attachments.append("maestro-output")
     if result.debug_dir and result.debug_dir.exists():
         shots = sorted(result.debug_dir.rglob("*.png"))[-MAX_DEBUG_IMAGES:]
@@ -161,7 +170,8 @@ def attach_result(result: FlowResult) -> None:
             allure.attach.file(str(shot), name=f"maestro-{shot.stem}", attachment_type=allure.attachment_type.PNG)
             result.attachments.append(f"maestro-{shot.stem}")
         for log in sorted(result.debug_dir.rglob("maestro.log"))[:1]:
-            allure.attach.file(str(log), name="maestro-log", attachment_type=allure.attachment_type.TEXT)
+            allure.attach(redact(log.read_text(encoding="utf-8", errors="replace"), env), name="maestro-log",
+                          attachment_type=allure.attachment_type.TEXT)
             result.attachments.append("maestro-log")
     if result.video:
         allure.attach.file(str(result.video), name="screen-recording", attachment_type=allure.attachment_type.MP4)

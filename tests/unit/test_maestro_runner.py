@@ -130,6 +130,14 @@ def test_phone_check_should_only_pass_when_adb_answers_in_time(monkeypatch, outc
     assert mr.phone_answers() is expected
 
 
+def test_redact_should_hide_the_password_value_wherever_it_appears():
+    secret = "not-a-real-secret-value"
+    text = f"Input text {secret}\n-e PASSWORD={secret} and again {secret}"
+    shown = mr.redact(text, {"PASSWORD": secret, "USERNAME": "someone"})
+    assert secret not in shown and shown.count("***") == 3
+    assert mr.redact("nothing secret here", {"PASSWORD": ""}) == "nothing secret here"
+
+
 def test_recording_should_stay_off_without_adb_or_when_disabled():
     assert mr.ScreenRecorder(False).enabled is False
     assert mr.ScreenRecorder(True).enabled == (mr.shutil.which("adb") is not None)

@@ -1,0 +1,99 @@
+$ 'C:\maestro\bin\maestro.bat' --device 192.168.1.9:5555 test --no-reinstall-driver --debug-output 'C:\Users\Lindvia\AppData\Local\Temp\maestro-v55dpomi' -e APP_ID=id.edot.ework -e COMPANY_ID=5049209 -e USERNAME=salesmanqaauto -e 'PASSWORD=***' -e 'OUTLET_NAME=Toko Berkah Utama QABPCSG' -e PHONE=8572918340 -e EMAIL=toko.berkah.bpcsg@example.co.id -e 'CONTACT_PERSON=Budi Santoso' -e 'STREET_ADDRESS=Jl. Diponegoro No. 45' -e 'CHANNEL=General\ Trade\ \(GT\)' -e 'CUSTOMER_TYPE=Retailer Small' -e 'ADDRESS_TYPE=Delivery Address' -e 'PROVINCE=DKI JAKARTA' -e 'CITY=JAKARTA SELATAN' -e DISTRICT=SETIABUDI -e 'SUB_DISTRICT=KARET KUNINGAN' -e POSTAL_CODE=12940 -e KTP=3171484627550449 'D:\Work\edot-qa-assessment\mobile\flows\create_customer.yaml'
+
+exit code 0 in 378.8s
+
+Running on 192.168.1.9:5555
+ > Flow create_customer
+Run shared/open_registration.yaml...
+  Run login.yaml...
+    Launch app "${APP_ID}" with clear state... COMPLETED
+    Tap on (Optional) "Later"... WARNED
+    Tap on id: tv_company_id... COMPLETED
+    Tap on (Optional) "Later"... WARNED
+    Erase 50 characters... COMPLETED
+    Input text ${COMPANY_ID}... COMPLETED
+    Tap on id: tv_username... COMPLETED
+    Tap on (Optional) "Later"... WARNED
+    Erase 50 characters... COMPLETED
+    Input text ${USERNAME}... COMPLETED
+    Tap on id: tv_password... COMPLETED
+    Tap on (Optional) "Later"... WARNED
+    Erase 50 characters... COMPLETED
+    Input text ${PASSWORD}... COMPLETED
+    Tap on id: btn_signin... COMPLETED
+  Run login.yaml... COMPLETED
+  Assert that id: rv_main_menu is visible... COMPLETED
+  Tap on "New Customer"... COMPLETED
+  Tap on id: noo_label_add_new_cust... COMPLETED
+  Assert that id: noo_registration_input_outlet_name is visible... COMPLETED
+Run shared/open_registration.yaml... COMPLETED
+Tap on id: noo_registration_input_outlet_name... COMPLETED
+Input text ${OUTLET_NAME}... COMPLETED
+Run shared/fill_basic.yaml...
+  Tap on id: noo_registration_input_phone... COMPLETED
+  Erase 20 characters... COMPLETED
+  Input text ${PHONE}... COMPLETED
+  Hide Keyboard... COMPLETED
+  Scrolling DOWN until id: noo_registration_input_email is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+  Tap on id: noo_registration_input_email... COMPLETED
+  Erase 60 characters... COMPLETED
+  Input text ${EMAIL}... COMPLETED
+  Hide Keyboard... COMPLETED
+  Scrolling DOWN until id: noo_registration_input_contact_person is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+  Tap on id: noo_registration_input_contact_person... COMPLETED
+  Erase 60 characters... COMPLETED
+  Input text ${CONTACT_PERSON}... COMPLETED
+  Hide Keyboard... COMPLETED
+  Scrolling DOWN until id: noo_registration_input_channel is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+  Tap on id: noo_registration_input_channel... COMPLETED
+  Tap on "${CHANNEL}", id: tvName... COMPLETED
+  Scrolling DOWN until id: noo_registration_input_outlet_type is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+  Tap on id: noo_registration_input_outlet_type... COMPLETED
+  Tap on "${CUSTOMER_TYPE}", id: tvName... COMPLETED
+Run shared/fill_basic.yaml... COMPLETED
+Tap on id: noo_registration_action_submit... COMPLETED
+Assert that id: noo_registration_input_address_type is visible... COMPLETED
+Tap on id: noo_registration_input_address_type... COMPLETED
+Tap on "${ADDRESS_TYPE}", id: tvName... COMPLETED
+Scrolling DOWN until id: noo_registration_input_address is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+Tap on id: noo_registration_input_address... COMPLETED
+Input text ${STREET_ADDRESS}... COMPLETED
+Assert that "${STREET_ADDRESS}", id: noo_registration_input_address is visible... COMPLETED
+Hide Keyboard... COMPLETED
+Scrolling DOWN until "Choose Province" is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+Tap on "Choose Province"... COMPLETED
+Tap on "${PROVINCE}", id: noo_location_option_item_title... COMPLETED
+Tap on "Choose City"... COMPLETED
+Tap on "${CITY}", id: noo_location_option_item_title... COMPLETED
+Tap on "Choose District"... COMPLETED
+Tap on "${DISTRICT}", id: noo_location_option_item_title... COMPLETED
+Scrolling DOWN until "Choose Sub district" is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+Tap on "Choose Sub district"... COMPLETED
+Tap on "${SUB_DISTRICT}", id: noo_location_option_item_title... COMPLETED
+Scrolling DOWN until "Choose Postal code" is visible with speed 40, visibility percentage 100%, timeout 20000 ms, with centering disabled... COMPLETED
+Tap on "Choose Postal code"... COMPLETED
+Tap on "${POSTAL_CODE}", id: noo_location_option_item_title... COMPLETED
+Tap on id: noo_registration_action_continue... COMPLETED
+Assert that id: update_info_item_input_value is visible... COMPLETED
+Tap on id: update_info_item_input_value... COMPLETED
+Input text ${KTP}... COMPLETED
+Hide Keyboard... COMPLETED
+Tap on id: btn_upload... COMPLETED
+Assert that id: btn_capture is visible... COMPLETED
+Tap on id: btn_capture... COMPLETED
+Assert that id: tv_filename is visible... COMPLETED
+Tap on id: noo_registration_doc_action_continue... COMPLETED
+Assert that id: signature_view is visible... COMPLETED
+Swiping in RIGHT direction on id: signature_view... COMPLETED
+Tap on id: update_info_action_submit... COMPLETED
+Tap on id: btn_positive... COMPLETED
+Assert that "Data Saved Successfully" is visible... COMPLETED
+Tap on id: btn_success_continue... COMPLETED
+Assert that id: rvNooCustomer is visible... COMPLETED
+Run shared/find_customer_card.yaml...
+  Repeat 40 times...
+    Swipe from (50%, 88%) to (50%, 12%) in 200 ms... COMPLETED
+  Repeat 40 times... COMPLETED
+  Scrolling DOWN until "${OUTLET_NAME}" is visible with speed 70, visibility percentage 100%, timeout 120000 ms, with centering disabled... COMPLETED
+Run shared/find_customer_card.yaml... COMPLETED
+Assert that "${OUTLET_NAME}" is visible... COMPLETED
