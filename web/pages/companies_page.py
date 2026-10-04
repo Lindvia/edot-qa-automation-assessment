@@ -8,6 +8,7 @@ from config import settings
 from web.pages.base_page import NAVIGATION_TIMEOUT, BasePage
 
 LIST_TIMEOUT = 30_000  # the account lists several hundred companies
+STABLE_FOR = 3_000     # a list that does not change for this long is fully loaded
 
 
 class CompaniesLocators:
@@ -19,7 +20,8 @@ class CompaniesLocators:
         self.add_company_button: Locator = page.get_by_role("button", name="+ Add Company")
         self.log_activity_tab: Locator = page.get_by_role("tab", name="Log Activity")
         # exact=True keeps "Manage Company" (the header button) out of the card buttons.
-        self.first_card_manage_button: Locator = page.get_by_role("button", name="Manage", exact=True).first
+        self.manage_buttons: Locator = page.get_by_role("button", name="Manage", exact=True)
+        self.first_card_manage_button: Locator = self.manage_buttons.first
 
     def company_name(self, name: str) -> Locator:
         """The company name text on its card (appears once per company)."""
@@ -58,6 +60,22 @@ class CompaniesPage(BasePage):
         expect(self.loc.loading).to_have_count(0, timeout=LIST_TIMEOUT)
         expect(self.loc.first_card_manage_button).to_be_visible(timeout=LIST_TIMEOUT)
 
+    def wait_for_full_list(self) -> int:
+        """Wait until the list has stopped growing and return how many companies it holds.
+
+        The list renders in batches: right after the first card appears, a company further down can
+        still be missing, so "not listed" is only meaningful once the count stays the same for a while.
+        A count that does not change for STABLE_FOR ms is taken as complete (auto-waiting, no sleep).
+        """
+        self.wait_for_list()
+        count = self.loc.manage_buttons.count()
+        while True:
+            try:
+                expect(self.loc.manage_buttons).not_to_have_count(count, timeout=STABLE_FOR)
+            except AssertionError:
+                return count  # unchanged for STABLE_FOR ms: the list is complete
+            count = self.loc.manage_buttons.count()
+
     # --- actions ---
     def click_add_company(self) -> None:
         with allure.step("Click + Add Company"):
@@ -72,7 +90,7 @@ class CompaniesPage(BasePage):
             self.loc.log_activity_tab.click()
 
     def is_listed(self, name: str) -> bool:
-        self.wait_for_list()
+        self.wait_for_full_list()
         return self.loc.company_name(name).count() > 0
 
     # --- assertions ---
@@ -102,7 +120,7 @@ class CompaniesPage(BasePage):
         with allure.step(f"Company '{name}' is gone from the list (waits up to {timeout_s}s)"):
             started = time.monotonic()
             while True:
-                self.wait_for_list()
+                self.wait_for_full_list()
                 elapsed = time.monotonic() - started
                 if self.loc.company_name(name).count() == 0:
                     allure.attach(f"Removed from the list after {elapsed:.0f}s", name="delete-propagation",

@@ -49,7 +49,8 @@ Read these first; they are the honest gaps of this submission.
    is not a single continuous run.
 6. **Mobile runs against the brief's fallback company 5049209**, because creating a user for a company
    made by the web suite returned HTTP 500. The brief says that company may expire.
-7. **One unexplained web flake** (WEB-08, empty Company Name once) did not recur; see
+7. **The earlier web flake (WEB-08, "Next stays disabled") is explained and fixed:** the app rejects a Company
+   Name over 30 characters and an AI-generated name was too long; see
    [Known behaviour](#known-behaviour-of-the-environment).
 8. **Bonus items not done, and why:**
    - **Parallel execution: not done on purpose.** The lifecycle tests run in a fixed order and share one
@@ -186,7 +187,8 @@ Roughly by value:
    kept serial.
 6. **Publish the Allure report** from CI to GitHub Pages instead of an artifact, and keep the history trend.
 7. **Fix `rerun_test`** in `ai/triage/cli.py` (it counts pytest exit code 5, nothing collected, as a failure).
-8. **Investigate the unexplained web flake** (WEB-08 empty Company Name, seen once) by saving a trace on failure.
+8. **Probe the other form limits** the way the 30-character name limit was found (the customer outlet name in
+   the mobile app is still unprobed), and save a Playwright trace on failure.
 
 ## Requirements
 
@@ -275,7 +277,7 @@ API keys are stored in the repository.**
 | `ESUITE_URL` | eSuite base URL (default `https://esuite.edot.id`) |
 | `ESUITE_EMAIL`, `ESUITE_PASSWORD` | web login (supplied with the assignment; put them in `.env`) |
 | `HEADLESS` | `true` (default) or `false` to watch the browser |
-| `DELETE_WAIT_SECONDS`, `EXPECT_TIMEOUT_MS` | how long a deleted company may stay in the list (default 180), and the default wait of every `expect()` (default 5000 ms). CI sets 600 and 30000 because eSuite is slower from a GitHub runner |
+| `DELETE_WAIT_SECONDS`, `EXPECT_TIMEOUT_MS` | how long a deleted company may stay in the list (default 600; measured 284 s), and the default wait of every `expect()` (default 5000 ms). CI sets 30000 for `EXPECT_TIMEOUT_MS` because eSuite is slower from a GitHub runner |
 | `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY` | optional free AI: any OpenAI-compatible endpoint (Groq, Gemini, OpenRouter, a local Ollama). `AI_API_KEY` is not needed for Ollama. Examples are in `.env.example` |
 | `ANTHROPIC_API_KEY` | optional alternative, used only when `AI_BASE_URL` is empty |
 | none of the above | test data falls back to Faker and triage runs rules-only |
@@ -372,10 +374,10 @@ at the start of every run.)
 The mobile report covers separate phone sessions (see [Limitations](#limitations) item 5 and
 [Mobile](#mobile-maestro--pytest) for the state of each test).
 
-One intermittent failure was seen once and has not been explained: in the first full web run the
-Register Company form had every field filled except Company Name, so Next stayed disabled (WEB-08,
-and WEB-09/WEB-12 failed on their precondition). The same module passed on the next run and the full
-suite passed after that. It was not fixed because the cause is unknown; it is documented here instead.
+One intermittent failure was seen early on: Next stayed disabled in the Register Company wizard (WEB-08,
+and WEB-09/WEB-12 failed on their precondition). The cause was found later by probing the form: the app
+rejects a Company Name over 30 characters, and an AI-generated name plus the unique suffix was sometimes
+longer. The data module now limits the name (schema, prompt and Faker fallback, with unit tests).
 
 ## Mobile (Maestro + Pytest)
 
@@ -466,7 +468,7 @@ the fallback "may be expired"; on 2 and 4 Oct 2026 it was still accepted (see th
   Allure report published as an artifact, no test company left on eSuite afterwards (list checked).
   Earlier runs failed on slow waits from the GitHub runner (sign-in redirect, Manage page, delete
   propagation, optional branch step); fixed with longer waits and the branch form's own copy button,
-  assertions unchanged. The runner uses `EXPECT_TIMEOUT_MS=30000` and `DELETE_WAIT_SECONDS=600`.
+  assertions unchanged. The runner uses `EXPECT_TIMEOUT_MS=30000` (`DELETE_WAIT_SECONDS` default 600).
 
 ## Project layout
 
@@ -508,8 +510,13 @@ docs/edot-test-cases.xlsx     Phase 1 manual test cases
 Found while building the suite; useful when reading a result:
 
 - **Deleted companies stay in the list for a while.** The delete shows a success toast at once, but
-  the company was still listed about 31 seconds later in a measured run. The delete test reloads the
-  list until `DELETE_WAIT_SECONDS` runs out and attaches the measured delay.
+  the company left the complete list only after about 284 seconds in a measured run (an earlier
+  "31 seconds" was a false reading: the list loads in batches, so a company can look missing while the list
+  is still loading; the page now waits until the list stops growing). The delete test reloads the list until
+  `DELETE_WAIT_SECONDS` runs out and attaches the measured delay.
+- **Company Name accepts at most 30 characters.** A longer name keeps Next disabled (found by probing the form).
+  The generated name gets " QA" + 5 letters appended, so the data module keeps the name it asks for to 22
+  characters. This was the cause of the earlier unexplained WEB-08 "Next stays disabled" flake.
 - **A new company's detail page can stay blank for a moment.** The test reloads it a few times before
   asserting the data.
 - **The UI differs between app versions** (for example the Companies header, and the optional branch

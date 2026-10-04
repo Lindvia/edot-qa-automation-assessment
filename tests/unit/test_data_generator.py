@@ -1,6 +1,7 @@
 """Offline unit tests for the AI test-data module (no browser, no network, no API key)."""
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -8,7 +9,7 @@ from ai import data_generator as gen
 from ai import schemas
 
 VALID_COMPANY = {
-    "name": "PT Nusantara Digital Solusi",
+    "name": "PT Nusantara Digital",
     "email": "info.nusantara@example.co.id",
     "phone": "81234567890",
     "street_address": "Jl. Jenderal Sudirman No. 45",
@@ -32,7 +33,7 @@ def completer_returning(*answers):
 def test_valid_ai_output_should_be_accepted_as_ai_data():
     result = gen.generate_company(completer_returning(json.dumps(VALID_COMPANY)))
     assert result.source == "ai"
-    assert result.data["name"].startswith("PT Nusantara Digital Solusi QA")
+    assert result.data["name"].startswith("PT Nusantara Digital QA")
     assert result.data["industry_type"] == "Technology"
 
 
@@ -184,3 +185,22 @@ def test_generated_records_should_be_unique_per_call():
 def test_ai_email_outside_the_reserved_domain_should_be_rejected():
     real_domain = dict(VALID_COMPANY, email="boss@gmail.com")
     assert gen.generate_company(completer_returning(json.dumps(real_domain))).source == "faker"
+
+
+@pytest.mark.parametrize("prompt", [gen.COMPANY_PROMPT, gen.CUSTOMER_PROMPT])
+def test_ai_usage_doc_should_show_the_exact_prompts_the_code_sends(prompt):
+    # AI_USAGE.md must list the exact prompts (brief); this fails when the code changes and the doc does not
+    doc = (Path(__file__).resolve().parents[2] / "AI_USAGE.md").read_text(encoding="utf-8")
+    assert prompt in doc
+
+
+@pytest.mark.parametrize("seed", range(300))
+def test_generated_company_name_with_its_suffix_should_fit_the_app_limit(seed):
+    # eSuite keeps Next disabled for a name over 30 characters (this made AI-named companies fail to register)
+    assert len(gen.generate_company(seed=seed).data["name"]) <= schemas.COMPANY_NAME_LIMIT
+
+
+def test_ai_company_name_that_would_exceed_the_app_limit_should_be_rejected():
+    too_long = dict(VALID_COMPANY, name="PT Maju Sejahtera Abadi Jaya")
+    result = gen.generate_company(completer_returning(json.dumps(too_long)))
+    assert result.source == "faker" and len(result.data["name"]) <= schemas.COMPANY_NAME_LIMIT

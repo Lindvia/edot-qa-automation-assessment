@@ -42,6 +42,10 @@ CUSTOMER_OPTIONS = {
     "address_type": "Delivery Address",    # choices: Others, Delivery Address, Invoice Address
 }
 
+# eSuite keeps Next disabled for a Company Name longer than 30 characters (found by probing the form). The
+# generated record gets " QA" + 5 letters appended, so the name the model returns may be 22 characters at most.
+COMPANY_NAME_LIMIT = 30
+UNIQUE_SUFFIX_LENGTH = len(" QA") + 5
 _NAME = r"^(PT|CV|UD) [A-Za-z][A-Za-z .&-]{2,50}$"
 _EMAIL = r"^[a-z0-9._-]{3,40}@example\.co\.id$"  # reserved-style domain: never a real mailbox
 _PHONE = r"^8[0-9]{8,11}$"                       # typed after the +62 country code, no leading 0
@@ -53,7 +57,7 @@ COMPANY_SCHEMA = {
     "additionalProperties": False,
     "required": ["name", "email", "phone", "street_address", "industry_type", "company_type"],
     "properties": {
-        "name": {"type": "string", "pattern": _NAME},
+        "name": {"type": "string", "pattern": _NAME, "maxLength": COMPANY_NAME_LIMIT - UNIQUE_SUFFIX_LENGTH},
         "email": {"type": "string", "pattern": _EMAIL},
         "phone": {"type": "string", "pattern": _PHONE},
         "street_address": {"type": "string", "pattern": _STREET},

@@ -34,7 +34,7 @@ You generate realistic Indonesian business test data. Reply with exactly one JSO
 
 ```
 Create one fictional Indonesian company for QA testing. JSON keys:
-"name": legal name starting with PT, CV or UD, letters/spaces/dots only, no digits, max 50 chars after the prefix;
+"name": legal name starting with PT, CV or UD, letters/spaces/dots only, no digits, at most 22 characters in total including the prefix, e.g. "PT Maju Jaya Abadi";
 "email": lowercase, must end with @example.co.id;
 "phone": Indonesian mobile number WITHOUT the leading 0 or +62, starts with 8, 9-12 digits, random digits (never a sequence like 81234567890);
 "street_address": a plausible street in Jakarta with a random house number, 10-80 chars, e.g. "Jl. Jenderal Sudirman No. 45";
@@ -50,7 +50,7 @@ Create one fictional Indonesian retail outlet (customer) for QA testing. JSON ke
 "phone": Indonesian mobile number WITHOUT the leading 0 or +62, starts with 8, 9-12 digits, random digits (never a sequence like 81234567890);
 "email": lowercase, must end with @example.co.id;
 "contact_person": a common Indonesian person name;
-"street_address": a plausible street address with a random house number, 10-80 chars, e.g. "Jl. Asia Afrika No. 8".
+"street_address": a street address on a well-known Indonesian main road (e.g. Jl. Sudirman, Jl. Thamrin, Jl. Asia Afrika, Jl. Diponegoro) with a random house number, 10-80 chars, e.g. "Jl. Asia Afrika No. 8". Use only common words a phone keyboard will not autocorrect.
 ```
 
 ### 3.4 Retry hint (added once, only after a rejected answer)

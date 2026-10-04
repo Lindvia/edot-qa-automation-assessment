@@ -39,7 +39,7 @@ SYSTEM_PROMPT = (
 
 COMPANY_PROMPT = (
     "Create one fictional Indonesian company for QA testing. JSON keys:\n"
-    '"name": legal name starting with PT, CV or UD, letters/spaces/dots only, no digits, max 50 chars after the prefix;\n'
+    '"name": legal name starting with PT, CV or UD, letters/spaces/dots only, no digits, at most 22 characters in total including the prefix, e.g. "PT Maju Jaya Abadi";\n'
     '"email": lowercase, must end with @example.co.id;\n'
     '"phone": Indonesian mobile number WITHOUT the leading 0 or +62, starts with 8, 9-12 digits, random digits (never a sequence like 81234567890);\n'
     '"street_address": a plausible street in Jakarta with a random house number, 10-80 chars, e.g. "Jl. Jenderal Sudirman No. 45";\n'
@@ -153,6 +153,8 @@ def _slug(text: str) -> str:
 def _faker_company(seed: Optional[int] = None) -> dict:
     fake, rng = _faker(seed)
     name = f"{rng.choice(['PT', 'CV', 'UD'])} {fake.last_name()} {fake.last_name()}"
+    if len(name) > schemas.COMPANY_NAME_LIMIT - schemas.UNIQUE_SUFFIX_LENGTH:
+        name = name.rsplit(" ", 1)[0]  # keep the unique suffix inside the app's name length limit
     return {
         "name": name,
         "email": f"{_slug(name)}@example.co.id",

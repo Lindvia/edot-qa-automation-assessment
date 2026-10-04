@@ -38,7 +38,6 @@ jobs:
       HEADLESS: "true"
       # eSuite is slower from a GitHub runner than from a laptop: longer waits, same assertions
       EXPECT_TIMEOUT_MS: "30000"
-      DELETE_WAIT_SECONDS: "600"
       ESUITE_EMAIL: ${{ secrets.ESUITE_EMAIL }}
       ESUITE_PASSWORD: ${{ secrets.ESUITE_PASSWORD }}
       # optional: without them the test data falls back to Faker
