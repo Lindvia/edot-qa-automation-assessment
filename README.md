@@ -17,7 +17,7 @@ and `docs/edot-test-cases.xlsx` for the manual test cases (Phase 1).
 - [Run the web suite](#run-the-web-suite) · [Unit tests](#unit-tests-offline)
 - [Allure report](#allure-report)
 - [AI failure triage](#ai-failure-triage) · [Triage evidence](#triage-evidence)
-- [Mobile](#mobile-maestro--pytest)
+- [Mobile](#mobile-maestro--pytest) · [CI](#ci-github-actions)
 - [Project layout](#project-layout) · [Engineering rules](#engineering-rules) · [Known behaviour of the environment](#known-behaviour-of-the-environment)
 
 ## Limitations
@@ -47,7 +47,7 @@ Read these first; they are the honest gaps of this submission.
    made by the web suite returned HTTP 500. The brief says that company may expire.
 7. **One unexplained web flake** (WEB-08, empty Company Name once) did not recur; see
    [Known behaviour](#known-behaviour-of-the-environment).
-8. **Not done (bonus):** CI pipeline, parallel runs, web-to-mobile data handoff. Known small issue:
+8. **Not done (bonus):** parallel runs, web-to-mobile data handoff. The CI workflow is written but has **not been run yet** (it needs the repository secrets below). Known small issue:
    `ai/triage/cli.py::rerun_test` counts pytest exit code 5 (nothing collected) as a failure.
 
 ## Requirements
@@ -312,6 +312,19 @@ Creating a user for a company created by the web suite returned HTTP 500 `"error
 even with unique values, so the mobile suite runs against the brief's **fallback company 5049209**
 (user `salesmanqaauto`, password in `.env`), not the company created in the web suite. The brief says
 the fallback "may be expired"; on 2 and 4 Oct 2026 it was still accepted (see the state above for each test).
+
+## CI (GitHub Actions)
+
+`.github/workflows/tests.yml`:
+
+- **Unit tests** (offline) run on every push and pull request.
+- **Web suite** runs only when started by hand (Actions > tests > Run workflow, tick `run_web`), because
+  it creates and deletes a company on the shared eSuite. It runs headless, one run at a time
+  (`concurrency`), and always publishes the Allure report plus raw results as the `allure-web-report`
+  artifact, even when a test fails.
+- Needs repository secrets (Settings > Secrets and variables > Actions): `ESUITE_EMAIL`,
+  `ESUITE_PASSWORD`; optional `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY` (without them the data is Faker).
+- Status: the workflow file is syntax-checked but **has not run yet**.
 
 ## Project layout
 
