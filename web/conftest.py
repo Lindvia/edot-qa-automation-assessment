@@ -1,5 +1,6 @@
 import allure
 import pytest
+from playwright.sync_api import expect
 
 from ai.data_generator import attach_to_allure, generate_company
 from config import settings
@@ -14,6 +15,8 @@ from web.pages.fixtures import (  # noqa: F401  (register page fixtures)
     register_company_page,
 )
 from web.pages.login_page import LoginPage
+
+LOGIN_REDIRECT_TIMEOUT_MS = 60_000
 
 
 @pytest.fixture
@@ -46,6 +49,9 @@ def auth_state(browser) -> str:
     try:
         LoginPage(page).perform_valid_login(email, password)
         dashboard = DashboardPage(page)
+        # The sign-in ends with an OIDC token redirect that took more than the default 5 s on a CI
+        # runner (it stayed on "REDIRECTING..."); wait for it once here, the checks below then pass at once.
+        expect(dashboard.loc.greeting).to_be_visible(timeout=LOGIN_REDIRECT_TIMEOUT_MS)
         dashboard.is_ready()
         dashboard.validate_welcome_greeting()
         context.storage_state(path=str(settings.STORAGE_STATE))
