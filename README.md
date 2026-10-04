@@ -12,7 +12,7 @@ and `docs/edot-test-cases.xlsx` for the manual test cases (Phase 1).
 
 ## Contents
 
-- [Limitations](#limitations)
+- [Limitations](#limitations) · [Beginner guide](#beginner-guide) (blocked? other computer/phone? iPhone? AI? improvements)
 - [Requirements](#requirements) · [Setup](#setup-step-by-step) · [Configuration](#configuration)
 - [Run the web suite](#run-the-web-suite) · [Unit tests](#unit-tests-offline)
 - [Allure report](#allure-report)
@@ -64,6 +64,129 @@ Read these first; they are the honest gaps of this submission.
      if eDOT fixes that call or names another way to create the mobile user.
    - **CI pipeline: done** (see [CI](#ci-github-actions)).
    - Known small issue: `ai/triage/cli.py::rerun_test` counts pytest exit code 5 (nothing collected) as a failure.
+
+## Beginner guide
+
+For someone new to test automation or new to this repository. "Verified" below means it was run on this
+project; "my understanding" means it was not tested here, so check the linked docs before relying on it.
+
+### How the pieces fit together
+
+| Piece | What it does | Where |
+|---|---|---|
+| **Pytest** | finds and runs the tests, reports pass/fail | `web/tests`, `mobile/tests`, `tests/unit` |
+| **Playwright** | drives a real Chromium browser for the web tests | `web/pages` (one class per page, the "page object") |
+| **Maestro** | taps and types on a real Android phone from small YAML files | `mobile/flows` |
+| **Allure** | turns the raw results into a clickable HTML report | `evidence/allure-*-report` |
+| **AI test data** | an AI model invents realistic company/customer data; a schema checks it; Faker is the fallback | `ai/data_generator.py` |
+| **AI failure triage** | after a run, walks the evidence of each failure and proposes a verdict (script defect, product bug, flaky) | `ai/triage` |
+| **GitHub Actions** | runs the unit tests on every push, and the web suite on demand | `.github/workflows/tests.yml` |
+
+The idea of every important test: **create** something, **verify** the data is really there (not just a
+"saved" message), then **delete** it. Data is never left on the shared system, except where the app gives no
+way to delete (see [Limitations](#limitations)).
+
+### If you are blocked
+
+Work top to bottom; stop at the first line that matches.
+
+| What you see | Most likely cause | What to do |
+|---|---|---|
+| `pip install` or `playwright install` fails | no internet, or an old Python | check `python --version` is 3.10+, retry on another network |
+| Every web test errors at login | wrong or missing `ESUITE_EMAIL` / `ESUITE_PASSWORD` in `.env` | fix `.env` (never type them into a file that is committed); run `python -m pytest -m smoke` |
+| Web tests pass locally but fail in GitHub Actions on timeouts | eSuite is slower from a GitHub runner | raise `EXPECT_TIMEOUT_MS` / `DELETE_WAIT_SECONDS` in the workflow (this is how CI was made green) |
+| A web run failed halfway | a test company may be left on eSuite | open eSuite > Companies and look for names ending in `QA` plus 4-8 capital letters; delete only those. The lifecycle test normally cleans up by itself |
+| `Phone not reachable over adb` (the run stops at once) | phone locked, cable out, or USB debugging authorization lost | unlock the phone, replug, tap Allow on the debugging prompt, check `adb devices` shows `device` and `adb shell echo ok` prints `ok` |
+| `adb devices` shows `unauthorized` or `offline` | the phone dropped the USB debugging session (happened every 10-15 min on the test Realme) | turn USB debugging off/on; or use adb over Wi-Fi (Setup, part B, step 5), which avoided the drops |
+| Maestro seems frozen | adb stopped answering, so Maestro waits silently | stop the run (`Get-Process java,python \| Stop-Process`), fix the connection, start again |
+| `JAVA_HOME` error or exit code 9009 | Java is not visible (typical in Git Bash) | run from PowerShell with Java 17 installed |
+| Phone asks to install Maestro helper apps each run | Realme/Oppo install prompt | accept once; the runner already passes `--no-reinstall-driver` ([docs/MOBILE_SETUP.md](docs/MOBILE_SETUP.md)) |
+| MOB-04 fails on the address | keyboard autocorrect changed the typed text | turn autocorrect off on the phone; the flow now fails right after typing with a clear message |
+| AI data says `source: faker` | no AI key, rate limit (HTTP 429), or the endpoint is down | read the `note` in the `company-test-data` attachment; set `AI_*` in `.env` or accept the Faker fallback |
+| The mobile run left the phone logged in | the run was killed before the logout fixture | `adb shell pm clear id.edot.ework` |
+
+**Rule of thumb when blocked:** do not weaken an assertion, skip a test, or lengthen a wait without knowing
+why it failed. Read the failure screenshot and message first (the Allure report attaches them), then decide
+whether the cause is the test, the environment or the product.
+
+### Run it on another computer, Android phone or emulator
+
+You need the same things as in [Setup](#setup-step-by-step), on that machine:
+
+1. **Python 3.10+, Git, the repo and its `.env`** (copy `.env.example`; the values come from the brief; the
+   `.env` file never goes into Git).
+2. **Web only:** `pip install -r requirements.txt` and `python -m playwright install chromium`. Works on
+   Windows, macOS and Linux (verified: Windows 11 locally and Ubuntu in GitHub Actions).
+3. **Android phone:** Java 17, `adb`, the Maestro CLI, USB debugging on, the eWork app installed, and a
+   data cable (or the same Wi-Fi for adb over Wi-Fi). Set `MAESTRO_CMD` to the Maestro path if it is not on PATH.
+4. **Android emulator instead of a phone:** install Android Studio, create a virtual device, start it, and
+   `adb devices` should list it as `emulator-5554`. It needs hardware virtualization (on Windows: enable it in
+   the BIOS, plus Windows Hypervisor Platform). That was not available on the machine used here, which is why
+   a real phone was used. The eWork app must be installed in the emulator by hand (sideload the APK).
+5. **Different phone model:** the flows use the app's own resource ids (`id.edot.ework:id/...`), so they work
+   on any Android phone running the same app version. What differs per phone: the permission and install prompts,
+   the keyboard (autocorrect!), and the camera screen. Expect to adjust the optional "Later" and install-prompt steps.
+6. **Another app version:** if a screen changes, ids may change. Inspect the screen again (see
+   [docs/MOBILE_SETUP.md](docs/MOBILE_SETUP.md)) and update only the id in `mobile/flows`.
+
+### What about an iPhone?
+
+Not supported by this repository, and not tested. My understanding, to be checked against the
+[Maestro iOS docs](https://docs.maestro.dev/):
+
+- Maestro's open-source CLI runs iOS flows on the **iOS Simulator**, which needs a **Mac with Xcode**. Real iPhones
+  are, as far as I know, not supported by the free CLI.
+- The flows would need rewriting: they select by Android resource ids, which iOS apps do not have. iOS uses
+  accessibility labels or visible text, so every selector would have to be re-read from the iOS app.
+- It also needs the iOS build of the eWork app (a different app id) and a way to install it in the Simulator;
+  whether such a build is available to us is unknown.
+- What would carry over unchanged: the Pytest wrapper, the AI data module, the logout idea (reinstalling the app
+  or resetting the simulator instead of `pm clear`), and the reporting.
+
+For real-device and iOS coverage without owning the hardware, a device cloud (for example Maestro Cloud,
+BrowserStack or Firebase Test Lab) is the usual route; none of them has been tried here.
+
+### Using the AI more
+
+What the AI does here is deliberately small and guarded (details in [AI_USAGE.md](AI_USAGE.md)):
+
+- **Test data**: the model proposes values, a JSON schema validates them, one retry is allowed, then Faker takes
+  over. The test never trusts the model.
+- **Triage**: rules check the evidence first; the model is asked only at step 4 ("was the expected value itself
+  right?"). It proposes a verdict; it never edits a test, never changes an assertion and never files a bug.
+
+How to use it more, safely:
+
+1. **Switch provider or model** only in `.env` (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`): Gemini free tier
+   (used here), Groq, OpenRouter, a local Ollama (no key, no data leaves the machine), or Anthropic. Free tiers
+   rate-limit bursts; the Faker fallback covers that.
+2. **Add a field to the generated data**: add it to the schema (`ai/schemas.py`) and the prompt
+   (`ai/data_generator.py`), and a unit test for the rejected values. The schema is the safety net, so change it first.
+3. **Run triage after every CI run**: add `python -m ai.triage` as a step after the tests and upload the Markdown
+   report next to the Allure report. It reads `allure-results`, so no other change is needed.
+4. **Ideas that fit the same guardrails** (not built): draft test cases from a spec for a human to review,
+   summarise a flaky test's history, suggest a replacement locator when one stops resolving (as a suggestion in
+   a report, never an automatic edit), group many failures by root cause.
+5. **Do not**: send real customer data or secrets to a model, let the model change assertions or expected values,
+   or treat a model answer as a verdict without the evidence next to it.
+
+### What to improve next
+
+Roughly by value:
+
+1. **Remove the leftover mobile customers** and ask eDOT for a delete (or a test-data reset) for customers; then
+   mobile can meet the "no data left behind" rule fully.
+2. **A stable device setup**: a dedicated test phone with debugging authorization that does not expire, or an
+   emulator on a machine with virtualization; then mobile tests can run in CI like the web ones.
+3. **Fix the web-to-mobile handoff** with eDOT (the user-creation call returns HTTP 500 for new companies), so mobile
+   logs into the company the web suite created and the fallback company is not needed.
+4. **Assert more on mobile** once the app has a customer detail screen (phone, email, channel and location are not
+   shown today).
+5. **Parallel runs** for the independent web tests only (display and negative tests), with the data-creating tests
+   kept serial.
+6. **Publish the Allure report** from CI to GitHub Pages instead of an artifact, and keep the history trend.
+7. **Fix `rerun_test`** in `ai/triage/cli.py` (it counts pytest exit code 5, nothing collected, as a failure).
+8. **Investigate the unexplained web flake** (WEB-08 empty Company Name, seen once) by saving a trace on failure.
 
 ## Requirements
 
