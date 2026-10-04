@@ -63,6 +63,12 @@ Read these first; they are the honest gaps of this submission.
      returned HTTP 500 "error in account center" even with unique values, so the mobile app cannot log into
      the new company. Mobile therefore uses the brief's fallback company 5049209 (item 6). It could be done
      if eDOT fixes that call or names another way to create the mobile user.
+   - **Mobile screen recording: not working on the test phone.** `MOBILE_RECORD=true` makes the wrapper run
+     `adb shell screenrecord` and attach the video, but the Realme (Android 16) refuses to let the adb shell
+     user write a video anywhere (`Permission denied` on `/sdcard`, `/sdcard/Download`, `/sdcard/Movies` and
+     `/data/local/tmp`), so no video is attached; the run just continues. The Allure report has the Maestro
+     output, the Maestro log and debug screenshots instead. On a phone or emulator that allows it, the
+     recorder may need a proper stop (the file must be finalized) before the video is usable; not verified.
    - **CI pipeline: done** (see [CI](#ci-github-actions)).
    - Known small issue: `ai/triage/cli.py::rerun_test` counts pytest exit code 5 (nothing collected) as a failure.
 
@@ -283,7 +289,7 @@ API keys are stored in the repository.**
 | none of the above | test data falls back to Faker and triage runs rules-only |
 | `FAKER_SEED` | seed of the offline fallback |
 | `MOBILE_APP_ID`, `MOBILE_COMPANY_ID`, `MOBILE_USERNAME`, `MOBILE_PASSWORD` | mobile login (password never in a YAML file) |
-| `MAESTRO_CMD`, `MOBILE_RECORD`, `MOBILE_FLOW_TIMEOUT` | how to call Maestro (on Windows the full path to `maestro.bat`), optional screen recording, per-flow timeout |
+| `MAESTRO_CMD`, `MOBILE_RECORD`, `MOBILE_FLOW_TIMEOUT` | how to call Maestro (on Windows the full path to `maestro.bat`), optional screen recording (not working on the test phone, see Limitations), per-flow timeout |
 
 ## Run the web suite
 
