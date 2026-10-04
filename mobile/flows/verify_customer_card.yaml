@@ -1,0 +1,32 @@
+# MOB-04: the customer card in the list shows exactly the data that was entered (Tier 2).
+# The customer is saved on the device first, so this flow must NOT clear the app state: it reuses the
+# session left by create_customer.yaml. (The app has no customer detail screen: cards are not tappable.)
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: "rv_main_menu"
+    timeout: 30000
+- tapOn: "New Customer"
+- extendedWaitUntil:
+    visible:
+      id: "rvNooCustomer"
+    timeout: 30000
+- runFlow: shared/find_customer_card.yaml
+# Each field below is asserted on its own and anchored to the card of this outlet, so another
+# customer's address or status cannot make the test pass.
+- assertVisible: ${OUTLET_NAME}
+- assertVisible:
+    text: ${STREET_ADDRESS}
+    below: ${OUTLET_NAME}
+- assertVisible:
+    text: ${CUSTOMER_TYPE}
+    below: ${OUTLET_NAME}
+- assertVisible:
+    text: "Waiting for Approval"
+    above: ${OUTLET_NAME}
+- assertVisible:
+    text: "CUST-.*"
+    below: ${OUTLET_NAME}

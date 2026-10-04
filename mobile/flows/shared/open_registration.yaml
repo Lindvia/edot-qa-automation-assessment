@@ -1,0 +1,18 @@
+# Shared sub-flow: log in and open the "New Customer Registration" form (Basic step).
+#   - runFlow: shared/open_registration.yaml
+# Ids were read from the real screens (uiautomator dump).
+appId: ${APP_ID}
+---
+- runFlow: login.yaml
+- extendedWaitUntil:
+    visible:
+      id: "rv_main_menu"
+    timeout: 30000
+# the "New Customer" tile on the dashboard (menu tiles have no unique id, only a title)
+- tapOn: "New Customer"
+- tapOn:
+    id: "noo_label_add_new_cust"
+- extendedWaitUntil:
+    visible:
+      id: "noo_registration_input_outlet_name"
+    timeout: 15000

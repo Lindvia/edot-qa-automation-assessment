@@ -1,0 +1,17 @@
+# Shared sub-flow: bring the card of ${OUTLET_NAME} into view in the New Customer List.
+# The list holds ~300 customers sorted oldest first and has no search, and a new customer is added at
+# the END, so fast swipes (a scroll gesture, not a tap on a position) get close and
+# scrollUntilVisible finishes the job. Scrolling one screen at a time took over 3 minutes.
+appId: ${APP_ID}
+---
+- repeat:
+    times: 40
+    commands:
+      - swipe:
+          start: 50%, 88%
+          end: 50%, 12%
+          duration: 200
+- scrollUntilVisible:
+    element: ${OUTLET_NAME}
+    speed: 70
+    timeout: 120000

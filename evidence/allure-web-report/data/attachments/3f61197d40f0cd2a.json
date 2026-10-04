@@ -1,0 +1,22 @@
+{
+  "source": "ai",
+  "note": "accepted on attempt 2",
+  "rejected": [
+    "attempt 1: rejected ('info@majubersama.example.co.id' does not match '^[a-z0-9._-]{3,40}@example\\\\.co\\\\.id$')"
+  ],
+  "data": {
+    "name": "PT Maju Bersama Abadi QAVGTOO",
+    "email": "contact.mba.vgtoo@example.co.id",
+    "phone": "8138592041",
+    "street_address": "Jl. MH Thamrin No. 88",
+    "industry_type": "Retail",
+    "company_type": "Retailer",
+    "language": "Indonesia",
+    "country": "Indonesia",
+    "province": "DKI JAKARTA",
+    "city": "JAKARTA SELATAN",
+    "district": "SETIABUDI",
+    "sub_district": "KARET KUNINGAN",
+    "postal_code": "12940"
+  }
+}

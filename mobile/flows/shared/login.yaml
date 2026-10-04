@@ -1,0 +1,46 @@
+# Shared sub-flow: log in to eWork SFA. Every flow that needs a logged-in app calls it with
+#   - runFlow: shared/login.yaml
+# Credentials come in as environment variables (-e COMPANY_ID=... from the Pytest wrapper);
+# nothing secret is written in any YAML file.
+#
+# Selector priority: id > id regex > text > accessibilityText > composite > point.
+# All ids below were read from the real login screen (uiautomator dump), none are guesses.
+#
+# Google Password Manager ("Use your saved password for ework?") can slide up over the form when a
+# field is focused, steal the focus and autofill the field. Each field is therefore focused, the
+# sheet is dismissed if it appears ("Later", optional), and the field is cleared before typing so the
+# value is exactly the environment variable.
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    # a fresh install asks "Allow eWork to send you notifications?"; grant it up front
+    permissions:
+      all: allow
+# the app focuses Company ID on launch, so the Password Manager sheet is already covering the form
+- tapOn:
+    text: "Later"
+    optional: true
+- tapOn:
+    id: "tv_company_id"
+- tapOn:
+    text: "Later"
+    optional: true
+- eraseText: 50
+- inputText: ${COMPANY_ID}
+- tapOn:
+    id: "tv_username"
+- tapOn:
+    text: "Later"
+    optional: true
+- eraseText: 50
+- inputText: ${USERNAME}
+- tapOn:
+    id: "tv_password"
+- tapOn:
+    text: "Later"
+    optional: true
+- eraseText: 50
+- inputText: ${PASSWORD}
+- tapOn:
+    id: "btn_signin"

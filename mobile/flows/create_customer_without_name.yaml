@@ -1,0 +1,26 @@
+# MOB-05: with every required field filled except Outlet Name, Continue stays disabled (Negative).
+# The app shows no message on the empty form, so the assertion is on the disabled button; the last
+# step proves the button is not simply broken by enabling it once the name is typed.
+appId: ${APP_ID}
+---
+- runFlow: shared/open_registration.yaml
+- runFlow: shared/fill_basic.yaml
+# (no hideKeyboard here: with no keyboard open Maestro presses Back, which would leave the form)
+- scrollUntilVisible:
+    element:
+      id: "noo_registration_action_submit"
+- assertVisible:
+    id: "noo_registration_action_submit"
+    enabled: false
+# control: the same form with a name becomes valid
+- scrollUntilVisible:
+    element:
+      id: "noo_registration_input_outlet_name"
+    direction: UP
+- tapOn:
+    id: "noo_registration_input_outlet_name"
+- inputText: ${OUTLET_NAME}
+- hideKeyboard
+- assertVisible:
+    id: "noo_registration_action_submit"
+    enabled: true

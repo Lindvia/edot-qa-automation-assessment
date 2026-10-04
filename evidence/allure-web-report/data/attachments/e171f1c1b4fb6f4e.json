@@ -1,0 +1,22 @@
+{
+  "source": "ai",
+  "note": "accepted on attempt 2",
+  "rejected": [
+    "attempt 1: rejected ('info@majubersama.example.co.id' does not match '^[a-z0-9._-]{3,40}@example\\\\.co\\\\.id$')"
+  ],
+  "data": {
+    "name": "PT Maju Bersama Abadi QAAWOER",
+    "email": "contact.maju.awoer@example.co.id",
+    "phone": "8179246813",
+    "street_address": "Jl. HR Rasuna Said Blok X-1 No. 8",
+    "industry_type": "Retail",
+    "company_type": "Distributor",
+    "language": "Indonesia",
+    "country": "Indonesia",
+    "province": "DKI JAKARTA",
+    "city": "JAKARTA SELATAN",
+    "district": "SETIABUDI",
+    "sub_district": "KARET KUNINGAN",
+    "postal_code": "12940"
+  }
+}

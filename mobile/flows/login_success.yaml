@@ -1,0 +1,14 @@
+# MOB-01: logging in with valid credentials shows the dashboard (Tier 1: display only).
+appId: ${APP_ID}
+---
+- runFlow: shared/login.yaml
+# the dashboard menu list and the Today tab exist only after a successful login
+- extendedWaitUntil:
+    visible:
+      id: "rv_main_menu"
+    timeout: 30000
+- assertVisible:
+    id: "tabToday"
+- assertVisible: "New Customer"
+- assertNotVisible:
+    id: "btn_signin"

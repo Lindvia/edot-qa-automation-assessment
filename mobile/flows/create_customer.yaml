@@ -1,0 +1,113 @@
+# MOB-03: create a customer through all three steps and see it in the customer list (Tier 2).
+# Data comes from the wrapper (-e ...): the AI data module for the free-text fields, the verified
+# dropdown catalog for the rest. Nothing is hardcoded here.
+appId: ${APP_ID}
+---
+- runFlow: shared/open_registration.yaml
+
+# ---- Step 1: Basic
+- tapOn:
+    id: "noo_registration_input_outlet_name"
+- inputText: ${OUTLET_NAME}
+- runFlow: shared/fill_basic.yaml
+# (no hideKeyboard here: with no keyboard open Maestro presses Back, which would leave the form)
+- tapOn:
+    id: "noo_registration_action_submit"
+
+# ---- Step 2: Locations
+- extendedWaitUntil:
+    visible:
+      id: "noo_registration_input_address_type"
+    timeout: 15000
+- tapOn:
+    id: "noo_registration_input_address_type"
+- tapOn:
+    id: "tvName"
+    text: ${ADDRESS_TYPE}
+- scrollUntilVisible:
+    element:
+      id: "noo_registration_input_address"
+- tapOn:
+    id: "noo_registration_input_address"
+- inputText: ${STREET_ADDRESS}
+- hideKeyboard
+# Province > City > District > Sub district > Postal code cascade: each field enables after the previous
+- scrollUntilVisible:
+    element: "Choose Province"
+- tapOn: "Choose Province"
+- tapOn:
+    id: "noo_location_option_item_title"
+    text: ${PROVINCE}
+- tapOn: "Choose City"
+- tapOn:
+    id: "noo_location_option_item_title"
+    text: ${CITY}
+- tapOn: "Choose District"
+- tapOn:
+    id: "noo_location_option_item_title"
+    text: ${DISTRICT}
+- scrollUntilVisible:
+    element: "Choose Sub district"
+- tapOn: "Choose Sub district"
+- tapOn:
+    id: "noo_location_option_item_title"
+    text: ${SUB_DISTRICT}
+- scrollUntilVisible:
+    element: "Choose Postal code"
+- tapOn: "Choose Postal code"
+- tapOn:
+    id: "noo_location_option_item_title"
+    text: ${POSTAL_CODE}
+- tapOn:
+    id: "noo_registration_action_continue"
+
+# ---- Step 3: Documents (KTP number and a photo are required)
+- extendedWaitUntil:
+    visible:
+      id: "update_info_item_input_value"
+    timeout: 15000
+- tapOn:
+    id: "update_info_item_input_value"
+- inputText: ${KTP}
+- hideKeyboard
+- tapOn:
+    id: "btn_upload"
+- extendedWaitUntil:
+    visible:
+      id: "btn_capture"
+    timeout: 15000
+- tapOn:
+    id: "btn_capture"
+- extendedWaitUntil:
+    visible:
+      id: "tv_filename"
+    timeout: 20000
+- tapOn:
+    id: "noo_registration_doc_action_continue"
+
+# ---- Approval signature, then confirm
+- extendedWaitUntil:
+    visible:
+      id: "signature_view"
+    timeout: 15000
+- swipe:
+    from:
+      id: "signature_view"
+    direction: RIGHT
+- tapOn:
+    id: "update_info_action_submit"
+- tapOn:
+    id: "btn_positive"
+- extendedWaitUntil:
+    visible: "Data Saved Successfully"
+    timeout: 30000
+- tapOn:
+    id: "btn_success_continue"
+
+# ---- Tier 2: the record is in the list, with the data that was entered (not only a success message)
+- extendedWaitUntil:
+    visible:
+      id: "rvNooCustomer"
+    timeout: 30000
+- runFlow: shared/find_customer_card.yaml
+- assertVisible: ${OUTLET_NAME}

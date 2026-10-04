@@ -1,0 +1,22 @@
+{
+  "source": "ai",
+  "note": "accepted on attempt 2",
+  "rejected": [
+    "attempt 1: rejected ('info@majubersama.example.co.id' does not match '^[a-z0-9._-]{3,40}@example\\\\.co\\\\.id$')"
+  ],
+  "data": {
+    "name": "PT Maju Bersama Abadi QAUECGE",
+    "email": "contact.mba.uecge@example.co.id",
+    "phone": "8219473821",
+    "street_address": "Jl. HR Rasuna Said Blok X No. 12",
+    "industry_type": "Manufacturing",
+    "company_type": "Manufacturer",
+    "language": "Indonesia",
+    "country": "Indonesia",
+    "province": "DKI JAKARTA",
+    "city": "JAKARTA SELATAN",
+    "district": "SETIABUDI",
+    "sub_district": "KARET KUNINGAN",
+    "postal_code": "12940"
+  }
+}

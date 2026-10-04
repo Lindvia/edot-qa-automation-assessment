@@ -1,0 +1,42 @@
+# Shared sub-flow: Basic step, every field EXCEPT Outlet Name (so a negative flow can leave it empty).
+# Expects PHONE, EMAIL, CONTACT_PERSON, CHANNEL, CUSTOMER_TYPE (regex-escaped by the wrapper).
+# The keyboard covers the lower fields, so it is hidden and the next field is scrolled into view first.
+appId: ${APP_ID}
+---
+- tapOn:
+    id: "noo_registration_input_phone"
+- eraseText: 20
+- inputText: ${PHONE}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "noo_registration_input_email"
+- tapOn:
+    id: "noo_registration_input_email"
+- eraseText: 60
+- inputText: ${EMAIL}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "noo_registration_input_contact_person"
+- tapOn:
+    id: "noo_registration_input_contact_person"
+- eraseText: 60
+- inputText: ${CONTACT_PERSON}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: "noo_registration_input_channel"
+- tapOn:
+    id: "noo_registration_input_channel"
+- tapOn:
+    id: "tvName"
+    text: ${CHANNEL}
+- scrollUntilVisible:
+    element:
+      id: "noo_registration_input_outlet_type"
+- tapOn:
+    id: "noo_registration_input_outlet_type"
+- tapOn:
+    id: "tvName"
+    text: ${CUSTOMER_TYPE}
