@@ -21,7 +21,7 @@ MOBILE_APP_ID = os.getenv("MOBILE_APP_ID", "")  # Android package id of eWork SF
 MOBILE_COMPANY_ID = os.getenv("MOBILE_COMPANY_ID", "")
 MOBILE_USERNAME = os.getenv("MOBILE_USERNAME", "")
 MOBILE_PASSWORD = os.getenv("MOBILE_PASSWORD", "")
-MAESTRO_CMD = os.getenv("MAESTRO_CMD", "maestro")  # on Windows: "wsl maestro"
+MAESTRO_CMD = os.getenv("MAESTRO_CMD", "maestro")  # on Windows: the full path to maestro.bat
 MOBILE_RECORD = os.getenv("MOBILE_RECORD", "false").lower() == "true"  # screen recording through adb
 MOBILE_FLOW_TIMEOUT = int(os.getenv("MOBILE_FLOW_TIMEOUT", "900"))
 

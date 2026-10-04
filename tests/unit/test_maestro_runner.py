@@ -3,6 +3,7 @@ real CLI, so no device, emulator, WSL or Java is needed."""
 
 import json
 import re
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -88,6 +89,31 @@ def test_an_unknown_flow_should_raise_instead_of_passing(fake_maestro):
     cmd, _ = fake_maestro
     with pytest.raises(FileNotFoundError):
         mr.run_flow("does_not_exist.yaml", ENV, cmd)
+
+
+def test_clearing_the_app_session_should_run_pm_clear_for_the_app(monkeypatch):
+    calls = []
+
+    def fake_run(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="Success\n", stderr="")
+
+    monkeypatch.setattr(mr.shutil, "which", lambda name: "adb")
+    monkeypatch.setattr(mr.subprocess, "run", fake_run)
+    assert mr.clear_app_session("id.edot.ework") is True
+    assert calls == [["adb", "shell", "pm", "clear", "id.edot.ework"]]
+
+
+@pytest.mark.parametrize("outcome", ["no_adb", "failure_output", "phone_does_not_answer"])
+def test_clearing_the_app_session_should_report_false_when_it_could_not_log_out(monkeypatch, outcome):
+    def fake_run(command, **kwargs):
+        if outcome == "phone_does_not_answer":
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+        return subprocess.CompletedProcess(command, 1, stdout="Failure [DELETE_FAILED_INTERNAL_ERROR]", stderr="")
+
+    monkeypatch.setattr(mr.shutil, "which", lambda name: None if outcome == "no_adb" else "adb")
+    monkeypatch.setattr(mr.subprocess, "run", fake_run)
+    assert mr.clear_app_session("id.edot.ework") is False
 
 
 def test_recording_should_stay_off_without_adb_or_when_disabled():
@@ -190,6 +216,19 @@ def test_no_flow_should_press_hide_keyboard_right_after_a_dropdown_selection():
                 assert not (isinstance(tapped, dict) and tapped.get("id") == "tvName"), (
                     f"hideKeyboard right after picking a dropdown option in {path.name}")
             previous = command
+
+
+def test_the_card_assertions_should_be_tied_to_the_card_not_to_screen_position():
+    """`below`/`above` are satisfied by a neighbouring card (a wrong status passed that way), so every field
+    assertion must select the card by its name and require the field inside it."""
+    text = (FLOWS / "verify_customer_card.yaml").read_text(encoding="utf-8")
+    assert not re.search(r"^\s*(below|above|leftOf|rightOf)\s*:", text, re.M)
+    field_checks = [c["assertVisible"] for c in flow_commands(FLOWS / "verify_customer_card.yaml")
+                    if isinstance(c, dict) and isinstance(c.get("assertVisible"), dict)
+                    and "containsDescendants" in c["assertVisible"]]
+    assert len(field_checks) == 4  # address, customer type, status, customer number
+    for check in field_checks:
+        assert check["containsChild"]["id"] == "tv_name" and check["containsChild"]["text"] == "${OUTLET_NAME}"
 
 
 def test_the_verify_flow_should_not_clear_the_app_state():

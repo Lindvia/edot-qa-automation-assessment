@@ -15,18 +15,38 @@ appId: ${APP_ID}
       id: "rvNooCustomer"
     timeout: 30000
 - runFlow: shared/find_customer_card.yaml
-# Each field below is asserted on its own and anchored to the card of this outlet, so another
-# customer's address or status cannot make the test pass.
-- assertVisible: ${OUTLET_NAME}
+# One assertion per field, so a failure names the field. Each one selects THE CARD (the element whose
+# direct child is this outlet's name) and requires the field INSIDE it: another card on screen that
+# also says "Waiting for Approval" or "Retailer Small" cannot satisfy it (proved on a device: a wrong
+# status fails even with such neighbours visible).
 - assertVisible:
-    text: ${STREET_ADDRESS}
-    below: ${OUTLET_NAME}
+    id: "tv_name"
+    text: ${OUTLET_NAME}
 - assertVisible:
-    text: ${CUSTOMER_TYPE}
-    below: ${OUTLET_NAME}
+    containsChild:
+      id: "tv_name"
+      text: ${OUTLET_NAME}
+    containsDescendants:
+      - id: "tv_address"
+        text: ${STREET_ADDRESS}
 - assertVisible:
-    text: "Waiting for Approval"
-    above: ${OUTLET_NAME}
+    containsChild:
+      id: "tv_name"
+      text: ${OUTLET_NAME}
+    containsDescendants:
+      - id: "tv_first_customer_group"
+        text: ${CUSTOMER_TYPE}
 - assertVisible:
-    text: "CUST-.*"
-    below: ${OUTLET_NAME}
+    containsChild:
+      id: "tv_name"
+      text: ${OUTLET_NAME}
+    containsDescendants:
+      - id: "tv_status"
+        text: "Waiting for Approval"
+- assertVisible:
+    containsChild:
+      id: "tv_name"
+      text: ${OUTLET_NAME}
+    containsDescendants:
+      - id: "tv_reg_number"
+        text: "CUST-[0-9]+"

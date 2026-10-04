@@ -5,7 +5,8 @@ triage). Target: eSuite (`https://esuite.edot.id`). See [AI_USAGE.md](AI_USAGE.m
 and `docs/edot-test-cases.xlsx` for the manual test cases (Phase 1).
 
 > **Status.** Web suite, AI test-data module, AI failure triage and the test-case sheet are done.
-> The **mobile (Maestro) suite is done and passes on a real phone** (MOB-01 to MOB-05): see [Mobile](#mobile-maestro--pytest).
+> The **mobile (Maestro) suite runs on a real phone**: MOB-01, 02, 03 and 05 pass; **MOB-04 currently fails** on a value the phone's
+> keyboard changed while typing (open item, not weakened): see [Mobile](#mobile-maestro--pytest).
 > The evidence (full web Allure report, triage report with the AI judge) is in [`evidence/`](#evidence-in-this-repo-evidence).
 
 ## Contents
@@ -51,7 +52,7 @@ API keys are stored in the repository.**
 | none of the above | test data falls back to Faker and triage runs rules-only |
 | `FAKER_SEED` | seed of the offline fallback |
 | `MOBILE_APP_ID`, `MOBILE_COMPANY_ID`, `MOBILE_USERNAME`, `MOBILE_PASSWORD` | mobile login (password never in a YAML file) |
-| `MAESTRO_CMD`, `MOBILE_RECORD`, `MOBILE_FLOW_TIMEOUT` | how to call Maestro (`wsl maestro` on Windows), optional screen recording, per-flow timeout |
+| `MAESTRO_CMD`, `MOBILE_RECORD`, `MOBILE_FLOW_TIMEOUT` | how to call Maestro (on Windows the full path to `maestro.bat`), optional screen recording, per-flow timeout |
 
 ## Run the web suite
 
@@ -138,8 +139,8 @@ at the start of every run.)
 | `triage-report-demo.md` | Triage of the three deliberate failures with the Gemini judge on: 1 and 2 decided by rules (steps 2 and 1), 3 decided at step 4 by the model, which noted the test case expects "Welcome Back," but the assertion checks "Selamat Datang,". All three are proposed as script defects; nothing was edited or filed. |
 | `allure-demo-report/` | Allure report of the same three failures, with the failure screenshots attached. |
 
-The mobile tests (MOB-01 to MOB-05) passed on a phone earlier; their report is not part of this folder
-because the phone was not connected for this run.
+There is no mobile Allure report in this folder: the mobile tests were run on a phone in separate
+sessions (see [Mobile](#mobile-maestro--pytest) for the exact state of each test).
 
 One intermittent failure was seen once and has not been explained: in the first full web run the
 Register Company form had every field filled except Company Name, so Next stayed disabled (WEB-08,
@@ -148,8 +149,18 @@ suite passed after that. It was not fixed because the cause is unknown; it is do
 
 ## Mobile (Maestro + Pytest)
 
-**State: MOB-01 to MOB-05 all pass on a real phone (Realme, Android 16, fallback company 5049209).
-The customer tests take about 10 minutes (the new customer sits at the end of a ~300 card list).**
+**State on a real phone (Realme, Android 16, fallback company 5049209), 4 Oct 2026:** MOB-01 and MOB-02
+passed earlier that day; in the last customer run MOB-03 and MOB-05 passed and **MOB-04 failed**. The
+customer tests take about 10 minutes (the new customer sits at the end of a ~300 card list).
+
+**Open item, MOB-04.** MOB-04 first passed with loose "below/above the name" checks, which a
+neighbouring card can satisfy (a wrong status passed that way). It now selects the card itself and
+requires each field inside it; a wrong status fails even with similar cards on screen (checked on the
+phone). With the stronger check it failed: the card showed "Jl. Gator Subroto No. 45" for the entered
+"Jl. Gatot Subroto No. 45". The cause is **not confirmed**; the likely one is the phone keyboard's
+autocorrect changing a word while it was typed (earlier streets passed because autocorrect left them
+alone). The assertion was kept strict on purpose. Planned next: check the typed value right after
+typing, so such a failure is labelled as a typing problem, and turn off autocorrect on the test phone.
 
 | Part | State |
 |---|---|
@@ -157,7 +168,7 @@ The customer tests take about 10 minutes (the new customer sits at the end of a 
 | Shared login sub-flow `flows/shared/login.yaml` (ids read from the real screen), used with `runFlow` by every flow | done, run on a phone |
 | `login_success.yaml` (MOB-01), `login_wrong_password.yaml` (MOB-02: "Oops" / "Wrong login combination" / "OK") | both **pass** on a phone. Google Password Manager's "Use your saved password" sheet covers the form on launch; the shared login dismisses it ("Later") and clears each field before typing |
 | `create_customer.yaml` (MOB-03, Tier 2): Basic, Locations (province > postal cascade), Documents (KTP + in-app camera photo), approval signature, confirmation, then the customer is found in the list | **passes** |
-| `verify_customer_card.yaml` (MOB-04, Tier 2): the card shows the entered name, address, customer type and "Waiting for Approval" (each asserted separately, anchored to that card) | **passes** |
+| `verify_customer_card.yaml` (MOB-04, Tier 2): the card shows the entered name, address, customer type, "Waiting for Approval" and a customer number (one assertion per field, each tied to that card) | **fails** in the last run, see the open item above |
 | `create_customer_without_name.yaml` (MOB-05, Negative): Continue is disabled without an outlet name and enabled once one is typed | **passes** |
 
 Things the app does that shape the tests (all found on a device):
@@ -165,12 +176,21 @@ Things the app does that shape the tests (all found on a device):
 - **No customer detail screen.** Cards in the New Customer List are not tappable, so MOB-04 reads the
   card instead of a detail page. Phone, email, contact person, channel and the location cascade are
   not shown anywhere after saving, so they cannot be asserted.
+- **The app is always left logged out.** A session-wide fixture (`logged_out_at_the_end` in
+  `mobile/conftest.py`) clears eWork's data with `adb shell pm clear` when the mobile session ends,
+  even after failures, so the phone never stays on a logged-in dashboard. If adb is missing or the
+  phone does not answer, the run warns instead of failing. (It is per session, not per test, because
+  of the next point.)
 - **Saved on the device first** ("will be uploaded when an internet connection is available"). The
   verify flow therefore never clears the app data, and MOB-05 (which logs in again) runs last.
 - **The list has no search** and shows the oldest customer first, so the finder flow swipes to the
   end and then scrolls to the name.
-- **Customers cannot be deleted** from the app: each run leaves one `... QA<LETTERS>` customer in the
-  shared company.
+- **Customers cannot be deleted** from the app, so every run that reaches "Data Saved" leaves one
+  `... QA<LETTERS>` customer in the shared company 5049209. **Test data left behind by the development
+  runs: at least CUST-00287 (a manual probe, "Toko QA Probe"), CUST-00289, CUST-00290 and CUST-00291**
+  (CUST-00288 is unconfirmed). They need to be removed by someone with access to the customer
+  management side of eSuite. The web suite leaves nothing behind: it deletes its company even when a
+  test fails.
 - **Maestro quirks:** `hideKeyboard` presses Back when no keyboard is open (it left the form once), and
   selector text is a regex, so the channel name `General Trade (GT)` is escaped by the wrapper.
 - Free-text data comes from the AI data module (Faker fallback). The dropdown options and the location
@@ -200,7 +220,7 @@ python -m pytest web/tests mobile/tests         # web + mobile in one Allure run
 Creating a user for a company created by the web suite returned HTTP 500 `"error in account center"`
 even with unique values, so the mobile suite runs against the brief's **fallback company 5049209**
 (user `salesmanqaauto`, password in `.env`), not the company created in the web suite. The brief says
-the fallback "may be expired"; on 2 Oct 2026 it was still accepted, and all five mobile tests passed.
+the fallback "may be expired"; on 2 and 4 Oct 2026 it was still accepted (see the state above for each test).
 
 ## Project layout
 

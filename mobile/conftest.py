@@ -1,4 +1,5 @@
 import re
+import warnings
 from typing import Callable, Dict
 
 import pytest
@@ -6,7 +7,7 @@ import pytest
 from ai import schemas
 from ai.data_generator import attach_to_allure, generate_customer
 from config import settings
-from mobile.maestro_runner import FlowResult, run_flow as run_maestro_flow
+from mobile.maestro_runner import FlowResult, clear_app_session, run_flow as run_maestro_flow
 from utils.helpers import generate_ktp_number
 
 
@@ -55,6 +56,18 @@ def mobile_env() -> dict:
         "USERNAME": settings.require("MOBILE_USERNAME", settings.MOBILE_USERNAME),
         "PASSWORD": settings.require("MOBILE_PASSWORD", settings.MOBILE_PASSWORD),
     }
+
+
+@pytest.fixture(scope="session", autouse=True)
+def logged_out_at_the_end(mobile_env):
+    """Whatever happened in the session (even failures), leave the app logged out when it ends.
+
+    Once per session and not per test on purpose: a new customer is saved on the device first, so
+    MOB-04 reads back what MOB-03 created and a logout in between would erase it."""
+    yield
+    if not clear_app_session(mobile_env["APP_ID"]):
+        warnings.warn("eWork was NOT logged out at the end of the session (adb missing or the phone did not "
+                      "answer): clear it by hand with `adb shell pm clear <app id>`.")
 
 
 @pytest.fixture

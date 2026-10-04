@@ -97,6 +97,19 @@ class ScreenRecorder:
         return target if pulled.returncode == 0 and target.exists() else None
 
 
+def clear_app_session(app_id: str, timeout: int = 30) -> bool:
+    """Log the app out by wiping its data (`adb shell pm clear`), so a session never leaves the phone on a
+    logged-in dashboard. Needs adb on the PATH; returns False when it could not be done (no adb, or the
+    phone did not answer in time)."""
+    if shutil.which("adb") is None:
+        return False
+    try:
+        run = subprocess.run(["adb", "shell", "pm", "clear", app_id], capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False
+    return run.returncode == 0 and "Success" in run.stdout
+
+
 def run_flow(flow_name: str, env: Dict[str, str], maestro_cmd: Union[str, Sequence[str], None] = "maestro",
              timeout: int = 300, record: bool = False) -> FlowResult:
     """Run mobile/flows/<flow_name> and return the result (the caller decides pass/fail)."""
