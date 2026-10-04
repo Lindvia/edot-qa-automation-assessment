@@ -22,6 +22,8 @@ class RegisterCompanyLocators:
         self.step_two_title: Locator = page.get_by_text("Register Legal", exact=True)
         self.step_three_title: Locator = page.get_by_text("Create Your Branch", exact=True)
         self.policy_checkbox: Locator = page.get_by_role("checkbox")
+        self.copy_company_data_button: Locator = page.get_by_role(
+            "button", name="Fill in with the same data from the Company records")
         # Text locator on purpose: the inline validation message has no role or test id.
         self.invalid_email_error: Locator = page.get_by_text("Please provide a valid email address", exact=True)
 
@@ -112,6 +114,10 @@ class RegisterCompanyPage(BasePage):
             # the page snapshot, which a bare click timeout does not.
             expect(self.loc.policy_checkbox).to_be_visible()
             self.loc.policy_checkbox.check()
+            # Some app versions prefill the branch name ("Headquarter"); the form then insists on the
+            # rest of the branch and keeps Register disabled. Copying the company data is the form's own way out.
+            if self.loc.register_button.is_disabled():
+                self.loc.copy_company_data_button.click()
             expect(self.loc.register_button).to_be_enabled()
             self.loc.register_button.click()
             expect(self._page).to_have_url(re.compile(r"/companies/?$"), timeout=60_000)
