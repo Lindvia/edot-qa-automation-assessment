@@ -1,7 +1,8 @@
 # CLAUDE.md
 
-Behavioral rules for every session on this project. They bias toward caution over speed; for a
-trivial change, use judgment.
+Behavioral rules for every session on this project (the first four are the general working rules, the
+fifth is specific to this project). They bias toward caution over speed; for a trivial change, use
+judgment.
 
 ## 1. Think Before Coding
 
@@ -40,6 +41,18 @@ Define success criteria. Loop until verified.
 - For multi-step work, state a short plan with a check per step.
 - Report results as they are: a failing test stays failing and is reported, never weakened.
 - Never claim something works that was not run.
+
+## 5. Clean Up Test Data
+
+Every test that creates data on a shared environment removes it again, and the cleanup is verified.
+
+- Cleanup runs even when the test fails (a fixture teardown / `finally`), not only on the happy path.
+- Verify it: after a run, check that nothing is left (the record is gone from the list), not that a
+  delete button was clicked.
+- If the app offers no way to delete something, say so before creating it, create as little of it as
+  possible, and list what was left behind in the README. Never run a data-creating test casually or "to
+  see what happens": every run leaves something.
+- Leave devices clean too: the phone is logged out when a mobile session ends.
 
 ## Project rules that already apply
 
