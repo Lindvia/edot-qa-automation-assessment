@@ -4,19 +4,51 @@ Python + Pytest + Playwright (web), Allure reporting, and AI inside the suite (t
 triage). Target: eSuite (`https://esuite.edot.id`). See [AI_USAGE.md](AI_USAGE.md) for how AI is used
 and `docs/edot-test-cases.xlsx` for the manual test cases (Phase 1).
 
-> **Status.** Web suite, AI test-data module, AI failure triage and the test-case sheet are done.
-> The **mobile (Maestro) suite runs on a real phone**: MOB-01, 02, 03 and 05 pass; **MOB-04 currently fails** on a value the phone's
-> keyboard changed while typing (open item, not weakened): see [Mobile](#mobile-maestro--pytest).
+> **Status.** Web suite, AI test-data module, AI failure triage and the test-case sheet are done and
+> verified (web: 13/13 passed). The **mobile (Maestro) suite runs on a real phone**: MOB-01, 02, 03 and 05
+> passed; **MOB-04 is an open item** (a keyboard autocorrect changed the typed street). A fix is in the
+> code but **not yet verified on a phone**, see [Limitations](#limitations).
 > The evidence (full web Allure report, triage report with the AI judge) is in [`evidence/`](#evidence-in-this-repo-evidence).
 
 ## Contents
 
-- [Requirements](#requirements) · [Setup](#setup) · [Configuration](#configuration)
+- [Limitations](#limitations)
+- [Requirements](#requirements) · [Setup](#setup-step-by-step) · [Configuration](#configuration)
 - [Run the web suite](#run-the-web-suite) · [Unit tests](#unit-tests-offline)
 - [Allure report](#allure-report)
 - [AI failure triage](#ai-failure-triage) · [Triage evidence](#triage-evidence)
 - [Mobile](#mobile-maestro--pytest)
 - [Project layout](#project-layout) · [Engineering rules](#engineering-rules) · [Known behaviour of the environment](#known-behaviour-of-the-environment)
+
+## Limitations
+
+Read these first; they are the honest gaps of this submission.
+
+1. **MOB-04 (customer card shows the entered data) is not verified green.** On the last full run it
+   failed because the phone keyboard autocorrected the typed street ("Gatot" became "Gator"). The cause
+   is **confirmed** (the saved screen dump of the address field shows the changed text). The fix is in
+   the repo but was **not run to completion on a phone**: (a) `create_customer.yaml` now asserts the
+   address field right after typing, so such a failure is reported at the cause; (b) the AI prompt and the
+   Faker fallback now use plain, well-known road names. The card assertion itself was **not weakened**.
+2. **Mobile runs depend on the phone staying connected.** On the Realme test phone adb lost its USB
+   debugging authorization or went offline every 10-15 minutes, so the last attempts could not
+   finish. This is a device/USB problem, not a suite result. The runner now checks that the phone answers
+   `adb shell echo ok` within 15 seconds before a session and stops with a clear message instead of
+   hanging. The emulator could not be used (this PC has no hypervisor).
+3. **Mobile test data cannot be cleaned.** The app has no delete for customers, so every run that saves
+   a customer leaves one in the shared company 5049209 (list in the [Mobile](#mobile-maestro--pytest)
+   section: CUST-00287, 00289, 00290, 00291, and 00288 unconfirmed). They need someone with eSuite
+   customer-management access. The web suite deletes everything it creates, even on failure.
+4. **Mobile covers what the app shows.** Cards are not tappable (no detail screen), so phone, email,
+   contact person, channel and location cannot be asserted after saving.
+5. **No mobile Allure report is included**, only the web one (`evidence/`). The mobile wrapper does write
+   Allure results (output, screenshots); they were just not rendered into a report.
+6. **Mobile runs against the brief's fallback company 5049209**, because creating a user for a company
+   made by the web suite returned HTTP 500. The brief says that company may expire.
+7. **One unexplained web flake** (WEB-08, empty Company Name once) did not recur; see
+   [Known behaviour](#known-behaviour-of-the-environment).
+8. **Not done (bonus):** CI pipeline, parallel runs, web-to-mobile data handoff. Known small issue:
+   `ai/triage/cli.py::rerun_test` counts pytest exit code 5 (nothing collected) as a failure.
 
 ## Requirements
 
@@ -26,15 +58,73 @@ and `docs/edot-test-cases.xlsx` for the manual test cases (Phase 1).
   (not needed to run the tests; `allure-pytest` writes the raw results)
 - For the mobile suite: Java 17+, Maestro CLI, `adb`, an emulator or device (see [docs/MOBILE_SETUP.md](docs/MOBILE_SETUP.md))
 
-## Setup
+## Setup (step by step)
 
-```bash
-python -m venv .venv
-.venv/Scripts/activate            # macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-python -m playwright install chromium
-cp .env.example .env              # then fill in the values (see below)
-```
+Commands are for Windows PowerShell; macOS/Linux differences are noted. Do the web part first; the
+mobile part is only needed for the Maestro tests.
+
+### A. Web, AI and unit tests
+
+1. **Install Python 3.10+** from python.org (tick "Add python.exe to PATH"). Check: `python --version`.
+2. **Install Git** and clone the repository:
+   ```powershell
+   git clone https://github.com/Lindvia/edot-qa-automation-assessment.git
+   cd edot-qa-automation-assessment
+   ```
+3. **Create the virtual environment and install the packages:**
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1          # macOS/Linux: source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+   If PowerShell blocks the activate script, run `Set-ExecutionPolicy -Scope Process Bypass` first.
+4. **Install the browser Playwright drives:** `python -m playwright install chromium`
+5. **Create your `.env`** (it is gitignored, never commit it): `copy .env.example .env`, then open it
+   and fill in `ESUITE_EMAIL` and `ESUITE_PASSWORD` (from the assignment brief). Leave the AI lines empty
+   to use the offline Faker data; for a free AI see the next step.
+6. **Optional, free AI** (test data + triage judge): create a free key at
+   https://aistudio.google.com/apikey and set in `.env`:
+   `AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`, `AI_MODEL=gemini-3.5-flash-lite`,
+   `AI_API_KEY=<your key>`. Groq, OpenRouter or a local Ollama work the same way (examples in `.env.example`).
+7. **Check the install without touching any system:** `python -m pytest tests/unit -q` (offline; all
+   tests should pass).
+8. **Run the web suite** (creates and deletes one test company on eSuite): `python -m pytest web/tests`,
+   or the narrower commands in [Run the web suite](#run-the-web-suite).
+9. **Render the Allure report:** install the Allure Commandline (Windows: download the zip from
+   https://github.com/allure-framework/allure2/releases, unzip to `C:\allure`, add `C:\allure\bin` to
+   PATH; macOS: `brew install allure`), then
+   ```powershell
+   allure generate allure-results --clean -o allure-report
+   allure open allure-report
+   ```
+
+### B. Mobile (Maestro on a real Android phone)
+
+1. **Install Java 17** (Temurin from adoptium.net). Check: `java -version`.
+2. **Install Android platform-tools** (gives `adb`): download from
+   https://developer.android.com/tools/releases/platform-tools, unzip, add the folder to PATH.
+   Check: `adb version`.
+3. **Install the Maestro CLI:** download `maestro.zip` from https://github.com/mobile-dev-inc/maestro/releases,
+   unzip to `C:\maestro`, add `C:\maestro\bin` to PATH. Check: `maestro --version`
+   (macOS/Linux: `curl -Ls "https://get.maestro.mobile.dev" | bash`).
+4. **Prepare the phone:** install the eWork SFA app (`id.edot.ework`); Settings, About phone, tap Build
+   number 7 times; Developer options: turn on **USB debugging**, **Disable adb authorization timeout**,
+   **Stay awake**, and (Realme/Oppo) **Disable permission monitoring**; turn off Battery saver; turn off
+   keyboard auto-correction. Connect with a good cable in File transfer mode and tap **Allow** on the
+   debugging prompt.
+5. **Check the phone is reachable:** `adb devices` must list it as `device` (not `unauthorized` or
+   `offline`) and `adb shell echo ok` must print `ok`.
+6. **Add the mobile lines to `.env`:** `MOBILE_APP_ID=id.edot.ework`, `MOBILE_COMPANY_ID`,
+   `MOBILE_USERNAME`, `MOBILE_PASSWORD` (from the brief) and, on Windows,
+   `MAESTRO_CMD=C:\maestro\bin\maestro.bat`.
+7. **Realme/Oppo only:** the first Maestro run asks to install its two helper apps; accept both prompts.
+   The runner passes `--no-reinstall-driver`, so this happens once. Details: [docs/MOBILE_SETUP.md](docs/MOBILE_SETUP.md).
+8. **Run the login tests first** (they create nothing): `python -m pytest mobile/tests/test_mobile_login.py`.
+9. **Only when needed, run the customer tests:** `python -m pytest mobile/tests/test_mobile_customer.py`.
+   Every run that saves a customer leaves one behind (see [Limitations](#limitations)), so do not run
+   them casually. Run them from PowerShell, not Git Bash (Git Bash does not see Java).
+10. **Log the phone out afterwards:** the suite does it by itself at the end of a session; if a run was
+    killed, run `adb shell pm clear id.edot.ework`.
 
 ## Configuration
 
@@ -150,17 +240,18 @@ suite passed after that. It was not fixed because the cause is unknown; it is do
 ## Mobile (Maestro + Pytest)
 
 **State on a real phone (Realme, Android 16, fallback company 5049209), 4 Oct 2026:** MOB-01 and MOB-02
-passed earlier that day; in the last customer run MOB-03 and MOB-05 passed and **MOB-04 failed**. The
-customer tests take about 10 minutes (the new customer sits at the end of a ~300 card list).
+passed; in the last full customer run MOB-03 and MOB-05 passed and **MOB-04 failed**. The customer tests
+take about 10 minutes (the new customer sits at the end of a ~300 card list).
 
 **Open item, MOB-04.** MOB-04 first passed with loose "below/above the name" checks, which a
-neighbouring card can satisfy (a wrong status passed that way). It now selects the card itself and
-requires each field inside it; a wrong status fails even with similar cards on screen (checked on the
-phone). With the stronger check it failed: the card showed "Jl. Gator Subroto No. 45" for the entered
-"Jl. Gatot Subroto No. 45". The cause is **not confirmed**; the likely one is the phone keyboard's
-autocorrect changing a word while it was typed (earlier streets passed because autocorrect left them
-alone). The assertion was kept strict on purpose. Planned next: check the typed value right after
-typing, so such a failure is labelled as a typing problem, and turn off autocorrect on the test phone.
+neighbouring card can satisfy. It now selects the card itself and requires each field inside it; a wrong
+status fails even with similar cards on screen (checked on the phone). With the stronger check it failed:
+the card showed "Jl. Gator Subroto No. 45" for the entered "Jl. Gatot Subroto No. 45". A later run
+**confirmed the cause**: right after typing, the address field itself already held "Jl. Gator Subroto No. 42",
+so the phone keyboard's autocorrect changed the word. Fix added, **not yet verified on a phone**: the flow
+asserts the field right after typing, and the data uses plain, well-known road names. The card assertion
+stays strict. The later attempts to rerun were stopped by the phone's USB connection dropping (see
+[Limitations](#limitations)); they created no customer.
 
 | Part | State |
 |---|---|
@@ -168,7 +259,7 @@ typing, so such a failure is labelled as a typing problem, and turn off autocorr
 | Shared login sub-flow `flows/shared/login.yaml` (ids read from the real screen), used with `runFlow` by every flow | done, run on a phone |
 | `login_success.yaml` (MOB-01), `login_wrong_password.yaml` (MOB-02: "Oops" / "Wrong login combination" / "OK") | both **pass** on a phone. Google Password Manager's "Use your saved password" sheet covers the form on launch; the shared login dismisses it ("Later") and clears each field before typing |
 | `create_customer.yaml` (MOB-03, Tier 2): Basic, Locations (province > postal cascade), Documents (KTP + in-app camera photo), approval signature, confirmation, then the customer is found in the list | **passes** |
-| `verify_customer_card.yaml` (MOB-04, Tier 2): the card shows the entered name, address, customer type, "Waiting for Approval" and a customer number (one assertion per field, each tied to that card) | **fails** in the last run, see the open item above |
+| `verify_customer_card.yaml` (MOB-04, Tier 2): the card shows the entered name, address, customer type, "Waiting for Approval" and a customer number (one assertion per field, each tied to that card) | **failed** in the last full run, fix pending verification (open item above) |
 | `create_customer_without_name.yaml` (MOB-05, Negative): Continue is disabled without an outlet name and enabled once one is typed | **passes** |
 
 Things the app does that shape the tests (all found on a device):

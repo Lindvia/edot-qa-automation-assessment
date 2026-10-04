@@ -47,13 +47,16 @@ COMPANY_PROMPT = (
     f'"company_type": exactly one of {schemas.COMPANY_TYPES}.'
 )
 
+# Plain, well-known road names: the phone keyboard autocorrects odd ones ("Gatot" became "Gator").
+COMMON_STREETS = ["Sudirman", "Thamrin", "Diponegoro", "Asia Afrika", "Merdeka", "Veteran"]
+
 CUSTOMER_PROMPT = (
     "Create one fictional Indonesian retail outlet (customer) for QA testing. JSON keys:\n"
     '"outlet_name": shop name, letters/spaces only, no digits, max 50 chars, e.g. "Toko Maju Jaya";\n'
     '"phone": Indonesian mobile number WITHOUT the leading 0 or +62, starts with 8, 9-12 digits, random digits (never a sequence like 81234567890);\n'
     '"email": lowercase, must end with @example.co.id;\n'
     '"contact_person": a common Indonesian person name;\n'
-    '"street_address": a plausible street address with a random house number, 10-80 chars, e.g. "Jl. Asia Afrika No. 8".'
+    '"street_address": a street address on a well-known Indonesian main road (e.g. Jl. Sudirman, Jl. Thamrin, Jl. Asia Afrika, Jl. Diponegoro) with a random house number, 10-80 chars, e.g. "Jl. Asia Afrika No. 8". Use only common words a phone keyboard will not autocorrect.'
 )
 
 
@@ -168,7 +171,7 @@ def _faker_customer(seed: Optional[int] = None) -> dict:
         "phone": "8" + "".join(rng.choice("0123456789") for _ in range(10)),
         "email": f"{_slug(outlet)}@example.co.id",
         "contact_person": f"{fake.first_name()} {fake.last_name()}",
-        "street_address": f"Jl. {fake.last_name()} No. {rng.randint(1, 99)}",
+        "street_address": f"Jl. {rng.choice(COMMON_STREETS)} No. {rng.randint(1, 99)}",
     }
 
 

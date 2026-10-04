@@ -30,6 +30,11 @@ appId: ${APP_ID}
 - tapOn:
     id: "noo_registration_input_address"
 - inputText: ${STREET_ADDRESS}
+# Echo check: the keyboard may autocorrect the typed street ("Gatot" -> "Gator"); fail here, at the
+# cause, instead of later when the list card shows different text.
+- assertVisible:
+    id: "noo_registration_input_address"
+    text: ${STREET_ADDRESS}
 - hideKeyboard
 # Province > City > District > Sub district > Postal code cascade: each field enables after the previous
 - scrollUntilVisible:

@@ -7,7 +7,7 @@ import pytest
 from ai import schemas
 from ai.data_generator import attach_to_allure, generate_customer
 from config import settings
-from mobile.maestro_runner import FlowResult, clear_app_session, run_flow as run_maestro_flow
+from mobile.maestro_runner import FlowResult, clear_app_session, phone_answers, run_flow as run_maestro_flow
 from utils.helpers import generate_ktp_number
 
 
@@ -59,7 +59,16 @@ def mobile_env() -> dict:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def logged_out_at_the_end(mobile_env):
+def phone_ready():
+    """Fail the whole session at once, with the reason, when the phone is not reachable (instead of a
+    silent Maestro hang until the flow timeout)."""
+    if not phone_answers():
+        pytest.exit("Phone not reachable over adb: unlock it, reconnect the cable and allow the USB "
+                    "debugging prompt, then check that `adb shell echo ok` answers.", returncode=3)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def logged_out_at_the_end(mobile_env, phone_ready):
     """Whatever happened in the session (even failures), leave the app logged out when it ends.
 
     Once per session and not per test on purpose: a new customer is saved on the device first, so

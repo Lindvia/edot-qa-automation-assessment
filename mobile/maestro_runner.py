@@ -97,6 +97,19 @@ class ScreenRecorder:
         return target if pulled.returncode == 0 and target.exists() else None
 
 
+def phone_answers(timeout: int = 15) -> bool:
+    """True when a phone is connected AND answers an adb command in time. A phone that lost its USB
+    debugging authorization still shows up in `adb devices`, but every command then hangs, and so
+    would Maestro (for the whole flow timeout, with no message)."""
+    if shutil.which("adb") is None:
+        return False
+    try:
+        run = subprocess.run(["adb", "shell", "echo", "ok"], capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False
+    return run.returncode == 0 and "ok" in run.stdout
+
+
 def clear_app_session(app_id: str, timeout: int = 30) -> bool:
     """Log the app out by wiping its data (`adb shell pm clear`), so a session never leaves the phone on a
     logged-in dashboard. Needs adb on the PATH; returns False when it could not be done (no adb, or the

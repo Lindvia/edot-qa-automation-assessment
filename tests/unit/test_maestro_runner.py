@@ -116,6 +116,20 @@ def test_clearing_the_app_session_should_report_false_when_it_could_not_log_out(
     assert mr.clear_app_session("id.edot.ework") is False
 
 
+@pytest.mark.parametrize("outcome, expected", [("answers", True), ("no_adb", False), ("hangs", False), ("error", False)])
+def test_phone_check_should_only_pass_when_adb_answers_in_time(monkeypatch, outcome, expected):
+    def fake_run(command, **kwargs):
+        if outcome == "hangs":
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+        if outcome == "error":
+            return subprocess.CompletedProcess(command, 1, stdout="", stderr="device unauthorized")
+        return subprocess.CompletedProcess(command, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(mr.shutil, "which", lambda name: None if outcome == "no_adb" else "adb")
+    monkeypatch.setattr(mr.subprocess, "run", fake_run)
+    assert mr.phone_answers() is expected
+
+
 def test_recording_should_stay_off_without_adb_or_when_disabled():
     assert mr.ScreenRecorder(False).enabled is False
     assert mr.ScreenRecorder(True).enabled == (mr.shutil.which("adb") is not None)
