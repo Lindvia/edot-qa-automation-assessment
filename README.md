@@ -136,7 +136,7 @@ API keys are stored in the repository.**
 | `ESUITE_URL` | eSuite base URL (default `https://esuite.edot.id`) |
 | `ESUITE_EMAIL`, `ESUITE_PASSWORD` | web login (supplied with the assignment; put them in `.env`) |
 | `HEADLESS` | `true` (default) or `false` to watch the browser |
-| `DELETE_WAIT_SECONDS` | how long a deleted company may stay in the list (default 180) |
+| `DELETE_WAIT_SECONDS`, `EXPECT_TIMEOUT_MS` | how long a deleted company may stay in the list (default 180), and the default wait of every `expect()` (default 5000 ms). CI sets 600 and 30000 because eSuite is slower from a GitHub runner |
 | `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY` | optional free AI: any OpenAI-compatible endpoint (Groq, Gemini, OpenRouter, a local Ollama). `AI_API_KEY` is not needed for Ollama. Examples are in `.env.example` |
 | `ANTHROPIC_API_KEY` | optional alternative, used only when `AI_BASE_URL` is empty |
 | none of the above | test data falls back to Faker and triage runs rules-only |

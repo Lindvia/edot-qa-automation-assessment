@@ -18,6 +18,8 @@ from web.pages.login_page import LoginPage
 
 LOGIN_REDIRECT_TIMEOUT_MS = 60_000
 
+expect.set_options(timeout=settings.EXPECT_TIMEOUT_MS)
+
 
 @pytest.fixture
 def company_data() -> dict:

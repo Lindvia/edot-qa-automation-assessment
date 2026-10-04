@@ -15,6 +15,7 @@ ESUITE_PASSWORD = os.getenv("ESUITE_PASSWORD", "")
 HEADLESS = os.getenv("HEADLESS", "true").lower() != "false"
 # How long a deleted company may stay in the Companies list before the delete test fails.
 DELETE_WAIT_SECONDS = int(os.getenv("DELETE_WAIT_SECONDS", "180"))
+EXPECT_TIMEOUT_MS = int(os.getenv("EXPECT_TIMEOUT_MS", "5000"))  # default wait of every expect()
 
 # --- Mobile (eWork SFA) via Maestro ---
 MOBILE_APP_ID = os.getenv("MOBILE_APP_ID", "")  # Android package id of eWork SFA (adb shell pm list packages)
