@@ -5,9 +5,9 @@ triage). Target: eSuite (`https://esuite.edot.id`). See [AI_USAGE.md](AI_USAGE.m
 and `docs/edot-test-cases.xlsx` for the manual test cases (Phase 1).
 
 > **Status.** Web suite, AI test-data module, AI failure triage and the test-case sheet are done and
-> verified (web: 13/13 passed). The **mobile (Maestro) suite runs on a real phone**: MOB-01, 02, 03 and 05
-> passed; **MOB-04 is an open item** (a keyboard autocorrect changed the typed street). A fix is in the
-> code but **not yet verified on a phone**, see [Limitations](#limitations).
+> verified (web: 13/13 passed locally and in GitHub Actions). The **mobile (Maestro) suite runs on a real
+> phone**: MOB-01 to MOB-05 have each passed; MOB-03 and MOB-04 passed together in the last customer run
+> (see [Mobile](#mobile-maestro--pytest) and [Limitations](#limitations)).
 > The evidence (full web Allure report, triage report with the AI judge) is in [`evidence/`](#evidence-in-this-repo-evidence).
 
 ## Contents
@@ -24,20 +24,21 @@ and `docs/edot-test-cases.xlsx` for the manual test cases (Phase 1).
 
 Read these first; they are the honest gaps of this submission.
 
-1. **MOB-04 (customer card shows the entered data) is not verified green.** On the last full run it
-   failed because the phone keyboard autocorrected the typed street ("Gatot" became "Gator"). The cause
-   is **confirmed** (the saved screen dump of the address field shows the changed text). The fix is in
-   the repo but was **not run to completion on a phone**: (a) `create_customer.yaml` now asserts the
-   address field right after typing, so such a failure is reported at the cause; (b) the AI prompt and the
-   Faker fallback now use plain, well-known road names. The card assertion itself was **not weakened**.
+1. **MOB-04 failed once, then passed after a data fix.** The phone keyboard autocorrected a typed
+   street ("Gatot" became "Gator"; confirmed from the saved screen dump). Fix: `create_customer.yaml` now
+   asserts the address field right after typing, and the AI prompt and Faker fallback use plain,
+   well-known road names. MOB-03 and MOB-04 then passed together on 4 Oct 2026. The card assertion was never
+   weakened. One passing run is thin evidence: autocorrect could still change another street.
 2. **Mobile runs depend on the phone staying connected.** On the Realme test phone adb lost its USB
-   debugging authorization or went offline every 10-15 minutes, so the last attempts could not
+   debugging authorization or went offline every 10-15 minutes, so several attempts could not
    finish. This is a device/USB problem, not a suite result. The runner now checks that the phone answers
    `adb shell echo ok` within 15 seconds before a session and stops with a clear message instead of
-   hanging. The emulator could not be used (this PC has no hypervisor).
+   hanging. The run that finally passed used **adb over Wi-Fi** (`adb tcpip 5555`, `adb connect <phone ip>:5555`,
+   `ANDROID_SERIAL` and `MAESTRO_CMD=maestro --device <ip>:5555`), which avoids the USB drops. The emulator
+   could not be used (this PC has no hypervisor).
 3. **Mobile test data cannot be cleaned.** The app has no delete for customers, so every run that saves
    a customer leaves one in the shared company 5049209 (list in the [Mobile](#mobile-maestro--pytest)
-   section: CUST-00287, 00289, 00290, 00291, and 00288 unconfirmed). They need someone with eSuite
+   section: CUST-00287, 00289, 00290, 00291, "Toko Berkah Utama QABPCSG" from the passing run, and 00288 unconfirmed). They need someone with eSuite
    customer-management access. The web suite deletes everything it creates, even on failure.
 4. **Mobile covers what the app shows.** Cards are not tappable (no detail screen), so phone, email,
    contact person, channel and location cannot be asserted after saving.
@@ -112,7 +113,8 @@ mobile part is only needed for the Maestro tests.
    **Stay awake**, and (Realme/Oppo) **Disable permission monitoring**; turn off Battery saver; turn off
    keyboard auto-correction. Connect with a good cable in File transfer mode and tap **Allow** on the
    debugging prompt.
-5. **Check the phone is reachable:** `adb devices` must list it as `device` (not `unauthorized` or
+5. **Optional, more stable: adb over Wi-Fi.** With the phone on USB and the same Wi-Fi as the PC: `adb tcpip 5555`, then `adb connect <phone ip>:5555` (`adb shell ip route` shows the ip). Then in PowerShell set `$env:ANDROID_SERIAL="<ip>:5555"` and `$env:MAESTRO_CMD="C:\maestro\bin\maestro.bat --device <ip>:5555"`. Back to USB: `adb -s <ip>:5555 usb`.
+5b. **Check the phone is reachable:** `adb devices` must list it as `device` (not `unauthorized` or
    `offline`) and `adb shell echo ok` must print `ok`.
 6. **Add the mobile lines to `.env`:** `MOBILE_APP_ID=id.edot.ework`, `MOBILE_COMPANY_ID`,
    `MOBILE_USERNAME`, `MOBILE_PASSWORD` (from the brief) and, on Windows,
@@ -240,18 +242,16 @@ suite passed after that. It was not fixed because the cause is unknown; it is do
 ## Mobile (Maestro + Pytest)
 
 **State on a real phone (Realme, Android 16, fallback company 5049209), 4 Oct 2026:** MOB-01 and MOB-02
-passed; in the last full customer run MOB-03 and MOB-05 passed and **MOB-04 failed**. The customer tests
-take about 10 minutes (the new customer sits at the end of a ~300 card list).
+passed; MOB-03 and MOB-04 passed together in the last customer run (about 8 minutes, over adb Wi-Fi) and
+MOB-05 passed earlier. The new customer sits at the end of a ~300 card list.
 
-**Open item, MOB-04.** MOB-04 first passed with loose "below/above the name" checks, which a
-neighbouring card can satisfy. It now selects the card itself and requires each field inside it; a wrong
-status fails even with similar cards on screen (checked on the phone). With the stronger check it failed:
-the card showed "Jl. Gator Subroto No. 45" for the entered "Jl. Gatot Subroto No. 45". A later run
-**confirmed the cause**: right after typing, the address field itself already held "Jl. Gator Subroto No. 42",
-so the phone keyboard's autocorrect changed the word. Fix added, **not yet verified on a phone**: the flow
-asserts the field right after typing, and the data uses plain, well-known road names. The card assertion
-stays strict. The later attempts to rerun were stopped by the phone's USB connection dropping (see
-[Limitations](#limitations)); they created no customer.
+**History of MOB-04.** It first passed with loose "below/above the name" checks, which a neighbouring card
+can satisfy. It now selects the card itself and requires each field inside it; a wrong status fails even
+with similar cards on screen (checked on the phone). With the stronger check it failed: the card showed
+"Jl. Gator Subroto No. 45" for the entered "Jl. Gatot Subroto No. 45". A later run confirmed the cause:
+right after typing, the address field itself already held "Jl. Gator Subroto No. 42" (keyboard autocorrect).
+Fix: the flow asserts the field right after typing, and the data uses plain, well-known road names. The
+card assertion stayed strict, and MOB-03 + MOB-04 then passed.
 
 | Part | State |
 |---|---|
@@ -259,7 +259,7 @@ stays strict. The later attempts to rerun were stopped by the phone's USB connec
 | Shared login sub-flow `flows/shared/login.yaml` (ids read from the real screen), used with `runFlow` by every flow | done, run on a phone |
 | `login_success.yaml` (MOB-01), `login_wrong_password.yaml` (MOB-02: "Oops" / "Wrong login combination" / "OK") | both **pass** on a phone. Google Password Manager's "Use your saved password" sheet covers the form on launch; the shared login dismisses it ("Later") and clears each field before typing |
 | `create_customer.yaml` (MOB-03, Tier 2): Basic, Locations (province > postal cascade), Documents (KTP + in-app camera photo), approval signature, confirmation, then the customer is found in the list | **passes** |
-| `verify_customer_card.yaml` (MOB-04, Tier 2): the card shows the entered name, address, customer type, "Waiting for Approval" and a customer number (one assertion per field, each tied to that card) | **failed** in the last full run, fix pending verification (open item above) |
+| `verify_customer_card.yaml` (MOB-04, Tier 2): the card shows the entered name, address, customer type, "Waiting for Approval" and a customer number (one assertion per field, each tied to that card) | **passes** (after the autocorrect fix above) |
 | `create_customer_without_name.yaml` (MOB-05, Negative): Continue is disabled without an outlet name and enabled once one is typed | **passes** |
 
 Things the app does that shape the tests (all found on a device):
@@ -278,8 +278,8 @@ Things the app does that shape the tests (all found on a device):
   end and then scrolls to the name.
 - **Customers cannot be deleted** from the app, so every run that reaches "Data Saved" leaves one
   `... QA<LETTERS>` customer in the shared company 5049209. **Test data left behind by the development
-  runs: at least CUST-00287 (a manual probe, "Toko QA Probe"), CUST-00289, CUST-00290 and CUST-00291**
-  (CUST-00288 is unconfirmed). They need to be removed by someone with access to the customer
+  runs: at least CUST-00287 (a manual probe, "Toko QA Probe"), CUST-00289, CUST-00290, CUST-00291 and "Toko Berkah Utama QABPCSG" (the passing run; its CUST number was not
+  read)** (CUST-00288 is unconfirmed). They need to be removed by someone with access to the customer
   management side of eSuite. The web suite leaves nothing behind: it deletes its company even when a
   test fails.
 - **Maestro quirks:** `hideKeyboard` presses Back when no keyboard is open (it left the form once), and
