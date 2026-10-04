@@ -5,7 +5,7 @@ import allure
 from playwright.sync_api import Locator, Page, expect
 
 from config import settings
-from web.pages.base_page import BasePage
+from web.pages.base_page import NAVIGATION_TIMEOUT, BasePage
 
 LIST_TIMEOUT = 30_000  # the account lists several hundred companies
 
@@ -122,4 +122,4 @@ class CompaniesPage(BasePage):
             expect(self.loc.deleted_log_entry(name)).to_be_visible(timeout=15_000)
 
     def validate_manage_url(self) -> None:
-        expect(self._page).to_have_url(re.compile(r"/companies/manage-companies/"))
+        expect(self._page).to_have_url(re.compile(r"/companies/manage-companies/"), timeout=NAVIGATION_TIMEOUT)

@@ -3,7 +3,7 @@ import re
 import allure
 from playwright.sync_api import Locator, Page, expect
 
-from web.pages.base_page import BasePage
+from web.pages.base_page import NAVIGATION_TIMEOUT, BasePage
 
 
 class CompanyDetailLocators:
@@ -36,7 +36,7 @@ class CompanyDetailPage(BasePage):
         self.loc = CompanyDetailLocators(page)
 
     def is_ready(self) -> None:
-        expect(self._page).to_have_url(re.compile(r"/companies/manage-companies/.+/profile"))
+        expect(self._page).to_have_url(re.compile(r"/companies/manage-companies/.+/profile"), timeout=NAVIGATION_TIMEOUT)
         expect(self.loc.heading).to_be_visible()
         expect(self.loc.delete_button).to_be_visible()
 

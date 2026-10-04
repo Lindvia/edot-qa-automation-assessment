@@ -4,6 +4,8 @@ from typing import Optional, Pattern, Union
 import allure
 from playwright.sync_api import Locator, Page
 
+NAVIGATION_TIMEOUT = 60_000  # an eSuite page change (login redirect, Manage) took >5 s on a CI runner
+
 
 class BasePage(ABC):
     """Parent of every page object (mirrors the provider-dashboard BasePage).
