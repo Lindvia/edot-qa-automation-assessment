@@ -47,7 +47,7 @@ Read these first; they are the honest gaps of this submission.
    made by the web suite returned HTTP 500. The brief says that company may expire.
 7. **One unexplained web flake** (WEB-08, empty Company Name once) did not recur; see
    [Known behaviour](#known-behaviour-of-the-environment).
-8. **Not done (bonus):** parallel runs, web-to-mobile data handoff. The CI workflow is written but has **not been run yet** (it needs the repository secrets below). Known small issue:
+8. **Not done (bonus):** parallel runs, web-to-mobile data handoff. The CI workflow works (see [CI](#ci-github-actions)). Known small issue:
    `ai/triage/cli.py::rerun_test` counts pytest exit code 5 (nothing collected) as a failure.
 
 ## Requirements
@@ -324,7 +324,11 @@ the fallback "may be expired"; on 2 and 4 Oct 2026 it was still accepted (see th
   artifact, even when a test fails.
 - Needs repository secrets (Settings > Secrets and variables > Actions): `ESUITE_EMAIL`,
   `ESUITE_PASSWORD`; optional `AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY` (without them the data is Faker).
-- Status: the workflow file is syntax-checked but **has not run yet**.
+- Status: run 37209626793 (4 Oct 2026, manual): unit 149 passed, web **13 of 13 passed** in 7 min,
+  Allure report published as an artifact, no test company left on eSuite afterwards (list checked).
+  Earlier runs failed on slow waits from the GitHub runner (sign-in redirect, Manage page, delete
+  propagation, optional branch step); fixed with longer waits and the branch form's own copy button,
+  assertions unchanged. The runner uses `EXPECT_TIMEOUT_MS=30000` and `DELETE_WAIT_SECONDS=600`.
 
 ## Project layout
 
